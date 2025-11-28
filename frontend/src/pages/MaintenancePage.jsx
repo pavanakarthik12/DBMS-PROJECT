@@ -65,7 +65,7 @@ const MaintenancePage = () => {
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-white">Maintenance Requests</h2>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Maintenance Requests</h2>
                 {user?.type === 'student' && (
                     <button
                         onClick={() => setShowModal(true)}
@@ -77,18 +77,18 @@ const MaintenancePage = () => {
             </div>
 
             {error && (
-                <div className="bg-red-900/50 border border-red-700 text-red-200 p-4 rounded-lg">
+                <div className="bg-red-100 dark:bg-red-900/50 border border-red-300 dark:border-red-700 text-red-800 dark:text-red-200 p-4 rounded-lg">
                     {error}
                 </div>
             )}
 
             <div className="space-y-4">
                 {requests.map((request) => (
-                    <div key={request.id} className="bg-surface-dark border border-gray-700 rounded-lg p-6">
+                    <div key={request.id} className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
                         <div className="flex items-start justify-between">
                             <div className="flex-1">
-                                <div className="flex items-center space-x-3 mb-2">
-                                    <h3 className="text-lg font-semibold text-white">{request.category}</h3>
+                                <div className="flex items-center space-x-3 mb-3">
+                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{request.category}</h3>
                                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${request.priority === 'High' ? 'bg-red-600 text-white' :
                                             request.priority === 'Medium' ? 'bg-yellow-600 text-white' :
                                                 'bg-green-600 text-white'
@@ -102,8 +102,8 @@ const MaintenancePage = () => {
                                         {request.status}
                                     </span>
                                 </div>
-                                <p className="text-gray-300 mb-3">{request.description}</p>
-                                <div className="text-sm text-gray-400">
+                                <p className="text-gray-700 dark:text-gray-300 mb-3">{request.description}</p>
+                                <div className="text-sm text-gray-600 dark:text-gray-400">
                                     {new Date(request.created_at).toLocaleDateString()}
                                 </div>
                             </div>
@@ -114,15 +114,15 @@ const MaintenancePage = () => {
 
             {showModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-surface-dark border border-gray-700 rounded-lg max-w-md w-full p-6">
-                        <h3 className="text-xl font-semibold text-white mb-4">New Maintenance Request</h3>
+                    <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg max-w-md w-full p-6">
+                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">New Maintenance Request</h3>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">Category</label>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category</label>
                                 <select
                                     value={newRequest.category}
                                     onChange={(e) => setNewRequest({ ...newRequest, category: e.target.value })}
-                                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-accent-blue"
+                                    className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-accent-blue"
                                     required
                                 >
                                     <option value="">Select category</option>
@@ -134,11 +134,11 @@ const MaintenancePage = () => {
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">Priority</label>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Priority</label>
                                 <select
                                     value={newRequest.priority}
                                     onChange={(e) => setNewRequest({ ...newRequest, priority: e.target.value })}
-                                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-accent-blue"
+                                    className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-accent-blue"
                                 >
                                     <option value="Low">Low</option>
                                     <option value="Medium">Medium</option>
@@ -146,11 +146,11 @@ const MaintenancePage = () => {
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">Description</label>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
                                 <textarea
                                     value={newRequest.description}
                                     onChange={(e) => setNewRequest({ ...newRequest, description: e.target.value })}
-                                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-accent-blue"
+                                    className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-accent-blue"
                                     rows="4"
                                     required
                                 />
@@ -159,7 +159,7 @@ const MaintenancePage = () => {
                                 <button
                                     type="button"
                                     onClick={() => setShowModal(false)}
-                                    className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                                    className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-lg transition-colors"
                                 >
                                     Cancel
                                 </button>

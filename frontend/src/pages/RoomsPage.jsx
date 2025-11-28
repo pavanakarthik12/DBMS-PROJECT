@@ -36,7 +36,7 @@ const RoomsPage = () => {
 
     if (error) {
         return (
-            <div className="bg-red-900/50 border border-red-700 text-red-200 p-4 rounded-lg">
+            <div className="bg-red-100 dark:bg-red-900/50 border border-red-300 dark:border-red-700 text-red-800 dark:text-red-200 p-4 rounded-lg">
                 {error}
             </div>
         );
@@ -45,7 +45,7 @@ const RoomsPage = () => {
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-white">Room Status</h2>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Room Status</h2>
                 <button
                     onClick={loadRooms}
                     className="px-4 py-2 bg-accent-blue hover:bg-blue-600 text-white rounded-lg transition-colors"
@@ -60,27 +60,27 @@ const RoomsPage = () => {
                     const isFull = room.current_occupancy >= room.capacity;
 
                     return (
-                        <div key={room.room_id} className="bg-surface-dark border border-gray-700 rounded-lg p-6">
+                        <div key={room.room_id} className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-xl font-bold text-white">Room {room.room_number}</h3>
+                                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Room {room.room_number}</h3>
                                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${isFull ? 'bg-red-600 text-white' : 'bg-green-600 text-white'
                                     }`}>
                                     {isFull ? 'Full' : 'Available'}
                                 </span>
                             </div>
 
-                            <div className="space-y-3">
+                            <div className="space-y-4">
                                 <div>
-                                    <p className="text-sm text-gray-400">Capacity</p>
-                                    <p className="text-white">{room.capacity} students</p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Capacity</p>
+                                    <p className="text-gray-900 dark:text-white">{room.capacity} students</p>
                                 </div>
                                 <div>
-                                    <p className="text-sm text-gray-400">Current Occupancy</p>
-                                    <p className="text-white">{room.current_occupancy} / {room.capacity}</p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Current Occupancy</p>
+                                    <p className="text-gray-900 dark:text-white">{room.current_occupancy} / {room.capacity}</p>
                                 </div>
                                 <div>
-                                    <p className="text-sm text-gray-400">Occupancy Rate</p>
-                                    <div className="w-full bg-gray-700 rounded-full h-2 mt-1">
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Occupancy Rate</p>
+                                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-2">
                                         <div
                                             className={`h-2 rounded-full ${isFull ? 'bg-red-600' : 'bg-green-600'}`}
                                             style={{ width: `${occupancyPercentage}%` }}
@@ -89,8 +89,8 @@ const RoomsPage = () => {
                                 </div>
                                 {room.students && (
                                     <div>
-                                        <p className="text-sm text-gray-400">Students</p>
-                                        <p className="text-white text-sm">{room.students || 'None'}</p>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Students</p>
+                                        <p className="text-gray-900 dark:text-white text-sm">{room.students || 'None'}</p>
                                     </div>
                                 )}
                             </div>

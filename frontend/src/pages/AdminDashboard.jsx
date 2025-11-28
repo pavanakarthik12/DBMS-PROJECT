@@ -36,7 +36,7 @@ const AdminDashboard = () => {
 
     if (error) {
         return (
-            <div className="bg-red-900/50 border border-red-700 text-red-200 p-4 rounded-lg">
+            <div className="bg-red-100 dark:bg-red-900/50 border border-red-300 dark:border-red-700 text-red-800 dark:text-red-200 p-4 rounded-lg">
                 {error}
             </div>
         );
@@ -51,14 +51,14 @@ const AdminDashboard = () => {
     ];
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
                 {stats.map((stat, index) => (
-                    <div key={index} className="bg-surface-dark border border-gray-700 rounded-lg p-6">
+                    <div key={index} className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-400 mb-1">{stat.label}</p>
-                                <p className="text-3xl font-bold text-white">{stat.value}</p>
+                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{stat.label}</p>
+                                <p className="text-3xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
                             </div>
                             <div className={`${stat.color} p-3 rounded-lg`}>
                                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -71,20 +71,20 @@ const AdminDashboard = () => {
             </div>
 
             {data?.today_menu && (
-                <div className="bg-surface-dark border border-gray-700 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-white mb-4">Today's Menu</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Today's Menu</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
-                            <p className="text-sm text-gray-400">Breakfast</p>
-                            <p className="text-white">{data.today_menu.breakfast || 'N/A'}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Breakfast</p>
+                            <p className="text-gray-900 dark:text-white">{data.today_menu.breakfast || 'N/A'}</p>
                         </div>
                         <div>
-                            <p className="text-sm text-gray-400">Lunch</p>
-                            <p className="text-white">{data.today_menu.lunch || 'N/A'}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Lunch</p>
+                            <p className="text-gray-900 dark:text-white">{data.today_menu.lunch || 'N/A'}</p>
                         </div>
                         <div>
-                            <p className="text-sm text-gray-400">Dinner</p>
-                            <p className="text-white">{data.today_menu.dinner || 'N/A'}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Dinner</p>
+                            <p className="text-gray-900 dark:text-white">{data.today_menu.dinner || 'N/A'}</p>
                         </div>
                     </div>
                 </div>

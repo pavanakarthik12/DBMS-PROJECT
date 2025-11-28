@@ -40,39 +40,39 @@ const StudentDashboard = () => {
 
     if (error) {
         return (
-            <div className="bg-red-900/50 border border-red-700 text-red-200 p-4 rounded-lg">
+            <div className="bg-red-100 dark:bg-red-900/50 border border-red-300 dark:border-red-700 text-red-800 dark:text-red-200 p-4 rounded-lg">
                 {error}
             </div>
         );
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-surface-dark border border-gray-700 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-white mb-4">My Information</h3>
-                    <div className="space-y-3">
+                <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">My Information</h3>
+                    <div className="space-y-4">
                         <div>
-                            <p className="text-sm text-gray-400">Name</p>
-                            <p className="text-white">{data?.student?.name}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Name</p>
+                            <p className="text-gray-900 dark:text-white">{data?.student?.name}</p>
                         </div>
                         <div>
-                            <p className="text-sm text-gray-400">Email</p>
-                            <p className="text-white">{data?.student?.email}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Email</p>
+                            <p className="text-gray-900 dark:text-white">{data?.student?.email}</p>
                         </div>
                         <div>
-                            <p className="text-sm text-gray-400">Room Number</p>
-                            <p className="text-white">{data?.student?.room_number || 'Not Assigned'}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Room Number</p>
+                            <p className="text-gray-900 dark:text-white">{data?.student?.room_number || 'Not Assigned'}</p>
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-surface-dark border border-gray-700 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-white mb-4">Roommates</h3>
+                <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Roommates</h3>
                     {data?.roommates && data.roommates.length > 0 ? (
-                        <ul className="space-y-2">
+                        <ul className="space-y-3">
                             {data.roommates.map((roommate, index) => (
-                                <li key={index} className="flex items-center space-x-2 text-white">
+                                <li key={index} className="flex items-center space-x-3 text-gray-900 dark:text-white">
                                     <svg className="w-5 h-5 text-accent-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                     </svg>
@@ -81,63 +81,63 @@ const StudentDashboard = () => {
                             ))}
                         </ul>
                     ) : (
-                        <p className="text-gray-400">No roommates</p>
+                        <p className="text-gray-600 dark:text-gray-400">No roommates</p>
                     )}
                 </div>
             </div>
 
             {data?.payment && (
-                <div className="bg-surface-dark border border-gray-700 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-white mb-4">Payment Status</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Payment Status</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
-                            <p className="text-sm text-gray-400">Amount</p>
-                            <p className="text-white font-semibold">₹{data.payment.amount}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Amount</p>
+                            <p className="text-gray-900 dark:text-white font-semibold">₹{data.payment.amount}</p>
                         </div>
                         <div>
-                            <p className="text-sm text-gray-400">Status</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Status</p>
                             <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${data.payment.status === 'Paid' ? 'bg-green-600 text-white' : 'bg-yellow-600 text-white'
                                 }`}>
                                 {data.payment.status}
                             </span>
                         </div>
                         <div>
-                            <p className="text-sm text-gray-400">Deadline</p>
-                            <p className="text-white">{new Date(data.payment.deadline).toLocaleDateString()}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Deadline</p>
+                            <p className="text-gray-900 dark:text-white">{new Date(data.payment.deadline).toLocaleDateString()}</p>
                         </div>
                     </div>
                 </div>
             )}
 
             {data?.today_menu && (
-                <div className="bg-surface-dark border border-gray-700 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-white mb-4">Today's Menu</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Today's Menu</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
-                            <p className="text-sm text-gray-400">Breakfast</p>
-                            <p className="text-white">{data.today_menu.breakfast || 'N/A'}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Breakfast</p>
+                            <p className="text-gray-900 dark:text-white">{data.today_menu.breakfast || 'N/A'}</p>
                         </div>
                         <div>
-                            <p className="text-sm text-gray-400">Lunch</p>
-                            <p className="text-white">{data.today_menu.lunch || 'N/A'}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Lunch</p>
+                            <p className="text-gray-900 dark:text-white">{data.today_menu.lunch || 'N/A'}</p>
                         </div>
                         <div>
-                            <p className="text-sm text-gray-400">Dinner</p>
-                            <p className="text-white">{data.today_menu.dinner || 'N/A'}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Dinner</p>
+                            <p className="text-gray-900 dark:text-white">{data.today_menu.dinner || 'N/A'}</p>
                         </div>
                     </div>
                 </div>
             )}
 
             {data?.recent_complaints && data.recent_complaints.length > 0 && (
-                <div className="bg-surface-dark border border-gray-700 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-white mb-4">Recent Complaints</h3>
-                    <div className="space-y-3">
+                <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Complaints</h3>
+                    <div className="space-y-4">
                         {data.recent_complaints.map((complaint) => (
-                            <div key={complaint.complaint_id} className="border-l-4 border-accent-blue pl-4">
-                                <p className="text-white font-medium">{complaint.complaint_type}</p>
-                                <p className="text-sm text-gray-400">{complaint.description}</p>
-                                <p className="text-xs text-gray-500 mt-1">Status: {complaint.status}</p>
+                            <div key={complaint.complaint_id} className="border-l-4 border-accent-blue pl-4 py-2">
+                                <p className="text-gray-900 dark:text-white font-medium">{complaint.complaint_type}</p>
+                                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{complaint.description}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">Status: {complaint.status}</p>
                             </div>
                         ))}
                     </div>
