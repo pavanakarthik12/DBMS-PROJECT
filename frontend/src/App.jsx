@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import Layout from './components/Layout';
 import LoginPage from './pages/LoginPage';
 import AdminDashboard from './pages/AdminDashboard';
@@ -12,15 +13,12 @@ import MaintenancePage from './pages/MaintenancePage';
 import MenuPage from './pages/MenuPage';
 import WaitingListPage from './pages/WaitingListPage';
 
-console.log('App.jsx loaded');
-
-
 const ProtectedRoute = ({ children, requiredRole }) => {
     const { user, loading } = useAuth();
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-primary-dark">
+            <div className="min-h-screen flex items-center justify-center bg-white dark:bg-primary-dark">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-blue"></div>
             </div>
         );
@@ -99,9 +97,11 @@ function AppRoutes() {
 
 function App() {
     return (
-        <AuthProvider>
-            <AppRoutes />
-        </AuthProvider>
+        <ThemeProvider>
+            <AuthProvider>
+                <AppRoutes />
+            </AuthProvider>
+        </ThemeProvider>
     );
 }
 

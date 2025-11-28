@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 const Layout = ({ children }) => {
     const { user, logout } = useAuth();
+    const { theme, toggleTheme } = useTheme();
     const location = useLocation();
     const [sidebarOpen, setSidebarOpen] = useState(true);
 
@@ -28,12 +30,12 @@ const Layout = ({ children }) => {
     const navigation = user?.type === 'admin' ? adminNav : studentNav;
 
     return (
-        <div className="min-h-screen bg-primary-dark flex">
+        <div className="min-h-screen bg-gray-50 dark:bg-primary-dark flex">
             {/* Sidebar */}
-            <div className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-surface-dark border-r border-gray-700 transition-all duration-300 flex flex-col`}>
-                <div className="p-6 border-b border-gray-700">
-                    <h1 className={`font-bold text-xl text-white ${!sidebarOpen && 'hidden'}`}>Hostel System</h1>
-                    <button onClick={() => setSidebarOpen(!sidebarOpen)} className="mt-2 text-gray-400 hover:text-white">
+            <div className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-white dark:bg-surface-dark border-r border-gray-200 dark:border-gray-700 transition-all duration-300 flex flex-col`}>
+                <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                    <h1 className={`font-bold text-xl text-gray-900 dark:text-white ${!sidebarOpen && 'hidden'}`}>Hostel System</h1>
+                    <button onClick={() => setSidebarOpen(!sidebarOpen)} className="mt-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={sidebarOpen ? 'M11 19l-7-7 7-7m8 14l-7-7 7-7' : 'M13 5l7 7-7 7M5 5l7 7-7 7'} />
                         </svg>
@@ -49,7 +51,7 @@ const Layout = ({ children }) => {
                                 to={item.path}
                                 className={`flex items-center px-4 py-3 rounded-lg transition-colors ${isActive
                                         ? 'bg-accent-blue text-white'
-                                        : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
                                     }`}
                             >
                                 <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -65,14 +67,31 @@ const Layout = ({ children }) => {
             {/* Main Content */}
             <div className="flex-1 flex flex-col">
                 {/* Top Bar */}
-                <div className="bg-surface-dark border-b border-gray-700 px-8 py-4 flex items-center justify-between">
-                    <h2 className="text-xl font-semibold text-white">
+                <div className="bg-white dark:bg-surface-dark border-b border-gray-200 dark:border-gray-700 px-8 py-4 flex items-center justify-between">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                         {navigation.find(item => item.path === location.pathname)?.name || 'Dashboard'}
                     </h2>
                     <div className="flex items-center space-x-4">
+                        {/* Theme Toggle */}
+                        <button
+                            onClick={toggleTheme}
+                            className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                        >
+                            {theme === 'dark' ? (
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                                </svg>
+                            ) : (
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                                </svg>
+                            )}
+                        </button>
+
                         <div className="text-right">
-                            <div className="text-sm font-medium text-white">{user?.name || user?.username || 'User'}</div>
-                            <div className="text-xs text-gray-400 capitalize">{user?.type}</div>
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">{user?.name || user?.username || 'User'}</div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400 capitalize">{user?.type}</div>
                         </div>
                         <button
                             onClick={logout}
@@ -84,7 +103,7 @@ const Layout = ({ children }) => {
                 </div>
 
                 {/* Page Content */}
-                <div className="flex-1 p-8 overflow-auto">
+                <div className="flex-1 p-8 overflow-auto bg-gray-50 dark:bg-primary-dark">
                     {children}
                 </div>
             </div>

@@ -4,10 +4,14 @@ module.exports = {
         "./src/**/*.{js,jsx,ts,tsx}",
         "./public/index.html"
     ],
+    darkMode: 'class',
     theme: {
         extend: {
             fontFamily: {
                 sans: ['Outfit', 'Open Sans', 'sans-serif'],
+            },
+            fontSize: {
+                base: '1.0625rem',
             },
             colors: {
                 primary: {

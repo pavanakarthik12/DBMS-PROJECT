@@ -48,21 +48,21 @@ const LoginPage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-primary-dark flex items-center justify-center px-4">
+        <div className="min-h-screen bg-gray-50 dark:bg-primary-dark flex items-center justify-center px-4">
             <div className="max-w-md w-full space-y-8">
                 <div className="text-center">
-                    <h1 className="text-4xl font-bold text-white mb-2">Hostel Management</h1>
-                    <p className="text-gray-400">Sign in to your account</p>
+                    <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Hostel Management</h1>
+                    <p className="text-gray-600 dark:text-gray-400">Sign in to your account</p>
                 </div>
 
-                <div className="bg-surface-dark p-8 rounded-lg border border-gray-700">
+                <div className="bg-white dark:bg-surface-dark p-8 rounded-lg border border-gray-200 dark:border-gray-700">
                     <div className="flex space-x-4 mb-6">
                         <button
                             type="button"
                             onClick={() => setUserType('student')}
                             className={`flex-1 py-3 rounded-lg font-medium transition-colors ${userType === 'student'
                                     ? 'bg-accent-blue text-white'
-                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                                 }`}
                         >
                             Student
@@ -72,7 +72,7 @@ const LoginPage = () => {
                             onClick={() => setUserType('admin')}
                             className={`flex-1 py-3 rounded-lg font-medium transition-colors ${userType === 'admin'
                                     ? 'bg-accent-blue text-white'
-                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                                 }`}
                         >
                             Admin
@@ -80,32 +80,32 @@ const LoginPage = () => {
                     </div>
 
                     {error && (
-                        <div className="mb-4 p-3 bg-red-900/50 border border-red-700 text-red-200 rounded-lg text-sm">
+                        <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/50 border border-red-300 dark:border-red-700 text-red-800 dark:text-red-200 rounded-lg text-sm">
                             {error}
                         </div>
                     )}
 
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 {userType === 'admin' ? 'Username' : 'Email'}
                             </label>
                             <input
                                 type={userType === 'admin' ? 'text' : 'email'}
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-accent-blue"
+                                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-accent-blue"
                                 placeholder={userType === 'admin' ? 'Enter username' : 'Enter email'}
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">Password</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Password</label>
                             <input
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-accent-blue"
+                                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-accent-blue"
                                 placeholder="Enter password"
                             />
                         </div>
@@ -121,14 +121,14 @@ const LoginPage = () => {
                         <button
                             type="button"
                             onClick={fillDemo}
-                            className="w-full py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors"
+                            className="w-full py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-medium rounded-lg transition-colors"
                         >
                             Fill Demo Credentials
                         </button>
                     </form>
 
-                    <div className="mt-6 p-4 bg-gray-800 rounded-lg text-sm text-gray-400">
-                        <p className="font-medium text-white mb-2">Demo Credentials:</p>
+                    <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg text-sm text-gray-600 dark:text-gray-400">
+                        <p className="font-medium text-gray-900 dark:text-white mb-2">Demo Credentials:</p>
                         <div className="space-y-1">
                             <p>Admin: admin / admin123</p>
                             <p>Student: rajesh@email.com / student123</p>
