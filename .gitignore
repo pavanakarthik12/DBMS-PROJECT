@@ -4,6 +4,7 @@ backend/*.pyc
 backend/instance/
 *.db
 backend/*.db
+backend/database.py
 
 # Frontend
 frontend/node_modules/
