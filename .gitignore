@@ -1,0 +1,20 @@
+# Backend
+backend/__pycache__/
+backend/*.pyc
+backend/instance/
+backend/hostel_management.db      # DB should not be tracked
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Environment / credentials
+.env
+*.env
+
+# OS / IDE files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
