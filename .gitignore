@@ -2,7 +2,8 @@
 backend/__pycache__/
 backend/*.pyc
 backend/instance/
-backend/hostel_management.db      # DB should not be tracked
+*.db
+backend/*.db
 
 # Frontend
 frontend/node_modules/
