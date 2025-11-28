@@ -390,5 +390,52 @@ def add_to_waiting_list():
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
+@app.route('/api/maintenance', methods=['GET'])
+def get_maintenance_requests():
+    try:
+        conn = get_connection()
+        if not conn:
+            return jsonify({'success': False, 'message': 'Database error'}), 500
+            
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT * FROM maintenance_requests 
+            ORDER BY created_at DESC
+        """)
+        requests = cursor.fetchall()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'data': [dict(req) for req in requests]
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/maintenance', methods=['POST'])
+def create_maintenance_request():
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'message': 'No data provided'}), 400
+            
+        conn = get_connection()
+        if not conn:
+            return jsonify({'success': False, 'message': 'Database error'}), 500
+            
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO maintenance_requests (student_id, room_id, category, description, priority, status, created_at)
+            VALUES (?, ?, ?, ?, ?, 'Pending', ?)
+        """, (data.get('student_id'), data.get('room_id'), data.get('category'),
+              data.get('description'), data.get('priority', 'Medium'), datetime.now().isoformat()))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'success': True, 'message': 'Maintenance request created successfully'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

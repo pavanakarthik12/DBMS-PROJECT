@@ -3,50 +3,71 @@ import axios from 'axios';
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api';
 
 const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+    baseURL: API_BASE_URL,
+    headers: {
+        'Content-Type': 'application/json',
+    },
 });
 
-// Request interceptor to handle errors
-api.interceptors.request.use(
-  (config) => config,
-  (error) => Promise.reject(error)
-);
-
-// Response interceptor to handle errors
 api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    console.error('API Error:', error);
-    return Promise.reject(error);
-  }
+    (response) => response,
+    (error) => {
+        console.error('API Error:', error);
+        return Promise.reject(error);
+    }
 );
 
-export const authAPI = {
-  login: (credentials) => api.post('/login', credentials),
+export const login = (email, password, userType) => {
+    return api.post('/login', { email, password, userType });
 };
 
-export const adminAPI = {
-  getDashboard: () => api.get('/admin/dashboard'),
-  getPayments: () => api.get('/payments'),
-  updatePayment: (paymentId, data) => api.put(`/payments/${paymentId}`, data),
-  getComplaints: () => api.get('/complaints'),
-  updateComplaint: (complaintId, data) => api.put(`/complaints/${complaintId}`, data),
+export const fetchAdminDashboard = () => {
+    return api.get('/admin/dashboard');
 };
 
-export const studentAPI = {
-  getDashboard: (studentId) => api.get(`/student/dashboard/${studentId}`),
-  getComplaints: (studentId) => api.get(`/complaints?student_id=${studentId}`),
-  createComplaint: (data) => api.post('/complaints', data),
+export const fetchStudentDashboard = (studentId) => {
+    return api.get(`/student/dashboard/${studentId}`);
 };
 
-export const generalAPI = {
-  getRooms: () => api.get('/rooms'),
-  getMenu: () => api.get('/menu'),
-  getWaitingList: () => api.get('/waiting-list'),
-  addToWaitingList: (data) => api.post('/waiting-list', data),
+export const fetchRooms = () => {
+    return api.get('/rooms');
+};
+
+export const fetchPayments = () => {
+    return api.get('/payments');
+};
+
+export const updatePayment = (paymentId, status) => {
+    return api.put(`/payments/${paymentId}`, { status });
+};
+
+export const fetchComplaints = (studentId = null) => {
+    const url = studentId ? `/complaints?student_id=${studentId}` : '/complaints';
+    return api.get(url);
+};
+
+export const createComplaint = (data) => {
+    return api.post('/complaints', data);
+};
+
+export const updateComplaint = (complaintId, status) => {
+    return api.put(`/complaints/${complaintId}`, { status });
+};
+
+export const fetchMenu = () => {
+    return api.get('/menu');
+};
+
+export const fetchWaitingList = () => {
+    return api.get('/waiting-list');
+};
+
+export const fetchMaintenance = () => {
+    return api.get('/maintenance');
+};
+
+export const createMaintenance = (data) => {
+    return api.post('/maintenance', data);
 };
 
 export default api;
