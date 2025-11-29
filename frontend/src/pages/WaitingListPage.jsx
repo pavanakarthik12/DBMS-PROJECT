@@ -8,6 +8,9 @@ const WaitingListPage = () => {
 
     useEffect(() => {
         loadWaitingList();
+        // Poll for updates every 5 seconds
+        const interval = setInterval(loadWaitingList, 5000);
+        return () => clearInterval(interval);
     }, []);
 
     const loadWaitingList = async () => {
@@ -26,7 +29,7 @@ const WaitingListPage = () => {
         }
     };
 
-    if (loading) {
+    if (loading && waitingList.length === 0) {
         return (
             <div className="flex items-center justify-center h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-blue"></div>
@@ -34,21 +37,21 @@ const WaitingListPage = () => {
         );
     }
 
-    if (error) {
+    if (error && waitingList.length === 0) {
         return (
-            <div className="bg-red-100 dark:bg-red-900/50 border border-red-300 dark:border-red-700 text-red-800 dark:text-red-200 p-4 rounded-lg">
+            <div className="bg-red-100 dark:bg-red-900/50 border border-red-300 dark:border-red-700 text-red-800 dark:text-red-200 p-6 rounded-lg">
                 {error}
             </div>
         );
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
             <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Waiting List</h2>
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Waiting List</h2>
                 <button
                     onClick={loadWaitingList}
-                    className="px-4 py-2 bg-accent-blue hover:bg-blue-600 text-white rounded-lg transition-colors"
+                    className="px-6 py-3 bg-accent-blue hover:bg-blue-600 text-white rounded-lg transition-colors font-medium"
                 >
                     Refresh
                 </button>
@@ -59,17 +62,17 @@ const WaitingListPage = () => {
                     <table className="w-full">
                         <thead className="bg-gray-100 dark:bg-gray-800">
                             <tr>
-                                <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 dark:text-gray-400 uppercase">Name</th>
-                                <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 dark:text-gray-400 uppercase">Phone</th>
-                                <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 dark:text-gray-400 uppercase">Join Date</th>
+                                <th className="px-8 py-5 text-left text-xs font-medium text-gray-700 dark:text-gray-400 uppercase tracking-wider">Name</th>
+                                <th className="px-8 py-5 text-left text-xs font-medium text-gray-700 dark:text-gray-400 uppercase tracking-wider">Phone</th>
+                                <th className="px-8 py-5 text-left text-xs font-medium text-gray-700 dark:text-gray-400 uppercase tracking-wider">Join Date</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                             {waitingList.map((person) => (
                                 <tr key={person.waiting_id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{person.student_name}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{person.phone}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                                    <td className="px-8 py-5 text-sm font-medium text-gray-900 dark:text-white">{person.student_name}</td>
+                                    <td className="px-8 py-5 text-sm text-gray-900 dark:text-white">{person.phone}</td>
+                                    <td className="px-8 py-5 text-sm text-gray-900 dark:text-white">
                                         {new Date(person.join_date).toLocaleDateString()}
                                     </td>
                                 </tr>

@@ -87,6 +87,19 @@ def admin_dashboard():
         cursor.execute("SELECT COUNT(*) as waiting_list FROM waiting_list")
         waiting_list = cursor.fetchone()['waiting_list']
         
+        cursor.execute("SELECT COUNT(*) as total_students FROM students")
+        total_students = cursor.fetchone()['total_students']
+        
+        # Check if maintenance_requests table exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='maintenance_requests'")
+        table_exists = cursor.fetchone()
+        
+        if table_exists:
+            cursor.execute("SELECT COUNT(*) as pending_maintenance FROM maintenance_requests WHERE status = 'Pending'")
+            pending_maintenance = cursor.fetchone()['pending_maintenance']
+        else:
+            pending_maintenance = 0
+        
         # Get today's menu
         today = datetime.now().strftime('%A')
         cursor.execute("SELECT * FROM menu WHERE day = ?", (today,))
@@ -98,9 +111,11 @@ def admin_dashboard():
             'success': True,
             'data': {
                 'total_rooms': total_rooms,
+                'total_students': total_students,
                 'occupancy_rate': occupancy_rate,
                 'pending_payments': pending_payments,
                 'pending_complaints': pending_complaints,
+                'pending_maintenance': pending_maintenance,
                 'waiting_list': waiting_list,
                 'today_menu': dict(today_menu) if today_menu else None
             }

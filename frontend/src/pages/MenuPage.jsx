@@ -39,26 +39,26 @@ const MenuPage = () => {
 
     if (error) {
         return (
-            <div className="bg-red-100 dark:bg-red-900/50 border border-red-300 dark:border-red-700 text-red-800 dark:text-red-200 p-4 rounded-lg">
+            <div className="bg-red-100 dark:bg-red-900/50 border border-red-300 dark:border-red-700 text-red-800 dark:text-red-200 p-6 rounded-lg">
                 {error}
             </div>
         );
     }
 
-    const dayMenu = menu.filter(item => item.day === selectedDay);
+    const dayMenu = menu.find(item => item.day === selectedDay);
 
     return (
-        <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Food Menu</h2>
+        <div className="space-y-8">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Food Menu</h2>
 
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-4">
                 {days.map((day) => (
                     <button
                         key={day}
                         onClick={() => setSelectedDay(day)}
-                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedDay === day
-                                ? 'bg-accent-blue text-white'
-                                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                        className={`px-6 py-3 rounded-lg font-medium transition-colors ${selectedDay === day
+                            ? 'bg-accent-blue text-white'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                             }`}
                     >
                         {day}
@@ -66,26 +66,26 @@ const MenuPage = () => {
                 ))}
             </div>
 
-            <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">{selectedDay}'s Menu</h3>
-                {dayMenu.length > 0 ? (
-                    <div className="space-y-4">
-                        {dayMenu.map((item) => (
-                            <div key={item.menu_id} className="border-l-4 border-accent-blue pl-4 py-2">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-sm text-gray-600 dark:text-gray-400 uppercase">{item.meal_type}</p>
-                                        <p className="text-gray-900 dark:text-white font-medium">{item.item_name}</p>
-                                        {item.description && (
-                                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{item.description}</p>
-                                        )}
-                                    </div>
-                                    {item.price && (
-                                        <p className="text-gray-900 dark:text-white font-semibold">₹{item.price}</p>
-                                    )}
-                                </div>
-                            </div>
-                        ))}
+            <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg p-8 shadow-sm">
+                <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-6">{selectedDay}'s Menu</h3>
+                {dayMenu ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="border-l-4 border-accent-blue pl-6 py-4">
+                            <p className="text-sm text-gray-600 dark:text-gray-400 uppercase mb-2">Breakfast</p>
+                            <p className="text-gray-900 dark:text-white font-medium text-lg">{dayMenu.breakfast}</p>
+                        </div>
+                        <div className="border-l-4 border-green-600 pl-6 py-4">
+                            <p className="text-sm text-gray-600 dark:text-gray-400 uppercase mb-2">Lunch</p>
+                            <p className="text-gray-900 dark:text-white font-medium text-lg">{dayMenu.lunch}</p>
+                        </div>
+                        <div className="border-l-4 border-yellow-600 pl-6 py-4">
+                            <p className="text-sm text-gray-600 dark:text-gray-400 uppercase mb-2">Snacks</p>
+                            <p className="text-gray-900 dark:text-white font-medium text-lg">{dayMenu.snacks}</p>
+                        </div>
+                        <div className="border-l-4 border-purple-600 pl-6 py-4">
+                            <p className="text-sm text-gray-600 dark:text-gray-400 uppercase mb-2">Dinner</p>
+                            <p className="text-gray-900 dark:text-white font-medium text-lg">{dayMenu.dinner}</p>
+                        </div>
                     </div>
                 ) : (
                     <p className="text-gray-600 dark:text-gray-400">No menu items for this day</p>
