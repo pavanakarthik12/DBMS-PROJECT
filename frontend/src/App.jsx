@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { DashboardRefreshProvider } from './context/DashboardRefreshContext';
 import Layout from './components/Layout';
 import LoginPage from './pages/LoginPage';
 import AdminDashboard from './pages/AdminDashboard';
@@ -99,7 +100,9 @@ function App() {
     return (
         <ThemeProvider>
             <AuthProvider>
-                <AppRoutes />
+                <DashboardRefreshProvider>
+                    <AppRoutes />
+                </DashboardRefreshProvider>
             </AuthProvider>
         </ThemeProvider>
     );

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { fetchPayments, updatePayment } from '../services/api';
+import { useDashboardRefresh } from '../context/DashboardRefreshContext';
 
 const PaymentsPage = () => {
+    const { triggerDashboardRefresh } = useDashboardRefresh();
     const [payments, setPayments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -9,6 +11,8 @@ const PaymentsPage = () => {
 
     useEffect(() => {
         loadPayments();
+        const interval = setInterval(loadPayments, 5000);
+        return () => clearInterval(interval);
     }, []);
 
     const loadPayments = async () => {
@@ -33,6 +37,7 @@ const PaymentsPage = () => {
             const response = await updatePayment(paymentId, status);
             if (response.data.success) {
                 await loadPayments();
+                triggerDashboardRefresh();
             }
         } catch (err) {
             setError('Failed to update payment');
@@ -41,7 +46,7 @@ const PaymentsPage = () => {
         }
     };
 
-    if (loading) {
+    if (loading && payments.length === 0) {
         return (
             <div className="flex items-center justify-center h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-blue"></div>
@@ -49,7 +54,7 @@ const PaymentsPage = () => {
         );
     }
 
-    if (error) {
+    if (error && payments.length === 0) {
         return (
             <div className="bg-red-100 dark:bg-red-900/50 border border-red-300 dark:border-red-700 text-red-800 dark:text-red-200 p-4 rounded-lg">
                 {error}

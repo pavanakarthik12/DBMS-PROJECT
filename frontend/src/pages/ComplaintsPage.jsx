@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { fetchComplaints, createComplaint, updateComplaint } from '../services/api';
+import { useDashboardRefresh } from '../context/DashboardRefreshContext';
 
 const ComplaintsPage = () => {
     const { user } = useAuth();
+    const { triggerDashboardRefresh } = useDashboardRefresh();
     const [complaints, setComplaints] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -15,7 +17,6 @@ const ComplaintsPage = () => {
 
     useEffect(() => {
         loadComplaints();
-        // Poll for updates every 5 seconds
         const interval = setInterval(loadComplaints, 5000);
         return () => clearInterval(interval);
     }, [user]);
@@ -50,6 +51,7 @@ const ComplaintsPage = () => {
                 setShowModal(false);
                 setNewComplaint({ complaint_type: '', description: '' });
                 await loadComplaints();
+                triggerDashboardRefresh();
             }
         } catch (err) {
             setError('Failed to create complaint');
@@ -61,6 +63,7 @@ const ComplaintsPage = () => {
             const response = await updateComplaint(complaintId, status);
             if (response.data.success) {
                 await loadComplaints();
+                triggerDashboardRefresh();
             }
         } catch (err) {
             setError('Failed to update complaint');

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { fetchMaintenance, createMaintenance } from '../services/api';
+import { useDashboardRefresh } from '../context/DashboardRefreshContext';
 
 const MaintenancePage = () => {
     const { user } = useAuth();
+    const { triggerDashboardRefresh } = useDashboardRefresh();
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -16,7 +18,6 @@ const MaintenancePage = () => {
 
     useEffect(() => {
         loadRequests();
-        // Poll for updates every 5 seconds
         const interval = setInterval(loadRequests, 5000);
         return () => clearInterval(interval);
     }, []);
@@ -51,6 +52,7 @@ const MaintenancePage = () => {
                 setShowModal(false);
                 setNewRequest({ category: '', description: '', priority: 'Medium' });
                 await loadRequests();
+                triggerDashboardRefresh();
             }
         } catch (err) {
             setError('Failed to create maintenance request');

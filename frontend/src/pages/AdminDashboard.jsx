@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { fetchAdminDashboard } from '../services/api';
+import { useDashboardRefresh } from '../context/DashboardRefreshContext';
 
 const AdminDashboard = () => {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const { refreshTrigger } = useDashboardRefresh();
 
     useEffect(() => {
         loadDashboard();
-        // Poll for updates every 5 seconds
+    }, [refreshTrigger]);
+
+    useEffect(() => {
         const interval = setInterval(loadDashboard, 5000);
         return () => clearInterval(interval);
     }, []);
