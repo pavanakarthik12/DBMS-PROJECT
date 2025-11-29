@@ -5,19 +5,19 @@
 @tailwind utilities;
 
 body {
-  font-family: 'Outfit', system-ui, -apple-system, sans-serif;
-  font-size: 16px;
-  background-color: #FAFAFA;
-  color: #1A1A1A;
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    background-color: #FAFAFA;
+    color: #1A1A1A;
 }
 
 body.dark {
-  background-color: #191919;
-  color: #FFFFFF;
+    background-color: #191919;
+    color: #FFFFFF;
 }
 
 @layer base {
-  * {
-    @apply border-gray-200 dark:border-gray-800;
-  }
+    * {
+        @apply border-gray-200 dark:border-gray-800;
+    }
 }

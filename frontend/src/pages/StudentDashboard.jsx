@@ -1,254 +1,178 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { fetchStudentDashboard, createRoomChangeRequest } from '../services/api';
-import { useDashboardRefresh } from '../context/DashboardRefreshContext';
+import { fetchMenu, createRoomChangeRequest, fetchComplaints } from '../services/api';
 
 const StudentDashboard = () => {
     const { user } = useAuth();
-    const { triggerDashboardRefresh } = useDashboardRefresh();
-    const [data, setData] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-    const [showRoomChangeModal, setShowRoomChangeModal] = useState(false);
-    const [successMessage, setSuccessMessage] = useState('');
-    const [roomChangeRequest, setRoomChangeRequest] = useState({
-        requested_room: '',
-        reason: '',
-    });
-
-    const loadDashboard = useCallback(async () => {
-        try {
-            setLoading(true);
-            const response = await fetchStudentDashboard(user.id);
-            if (response.data.success) {
-                setData(response.data.data);
-            } else {
-                setError(response.data.message);
-            }
-        } catch (err) {
-            setError('Failed to load dashboard data');
-        } finally {
-            setLoading(false);
-        }
-    }, [user.id]);
+    const [menu, setMenu] = useState(null);
+    const [complaints, setComplaints] = useState([]);
+    const [studentData, setStudentData] = useState(null);
+    const [showRoomModal, setShowRoomModal] = useState(false);
+    const [roomRequest, setRoomRequest] = useState({ requested_room_id: '', reason: '' });
 
     useEffect(() => {
         if (user?.id) {
-            loadDashboard();
+            loadData();
         }
-    }, [user, loadDashboard]);
+    }, [user?.id]);
 
-    const handleRoomChangeSubmit = async (e) => {
-        e.preventDefault();
-        setError('');
-        setSuccessMessage('');
-
-        if (!roomChangeRequest.requested_room || !roomChangeRequest.reason.trim()) {
-            setError('Please fill in all fields');
-            return;
-        }
-
+    const loadData = async () => {
         try {
-            const response = await createRoomChangeRequest({
-                student_id: user.id,
-                current_room: user.room_id,
-                requested_room: parseInt(roomChangeRequest.requested_room),
-                reason: roomChangeRequest.reason,
-            });
+            const [dashboardRes, menuRes, complaintsRes] = await Promise.all([
+                fetchStudentDashboard(user.id),
+                fetchMenu(),
+                fetchComplaints()
+            ]);
 
-            if (response.data.success) {
-                setShowRoomChangeModal(false);
-                setRoomChangeRequest({ requested_room: '', reason: '' });
-                setSuccessMessage('Room change request submitted successfully');
-                triggerDashboardRefresh();
-                setTimeout(() => setSuccessMessage(''), 3000);
+            if (dashboardRes.data.success) {
+                setStudentData(dashboardRes.data.data.student);
             }
-        } catch (err) {
-            setError('Failed to submit room change request');
+
+            if (menuRes.data.success) {
+                const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+                setMenu(menuRes.data.data.find(m => m.day === today));
+            }
+            if (complaintsRes.data.success) {
+                setComplaints(complaintsRes.data.data.slice(0, 3));
+            }
+        } catch (error) {
+            console.error('Failed to load student data', error);
         }
     };
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
-            </div>
-        );
-    }
-
-    if (error && !data) {
-        return (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 rounded">
-                {error}
-            </div>
-        );
-    }
+    const handleRoomRequest = async (e) => {
+        e.preventDefault();
+        try {
+            const response = await createRoomChangeRequest(roomRequest);
+            if (response.data.success) {
+                setShowRoomModal(false);
+                alert('Request submitted successfully');
+            } else {
+                alert(response.data.message);
+            }
+        } catch (error) {
+            alert('Failed to submit request');
+        }
+    };
 
     return (
-        <div className="space-y-10">
+        <div className="space-y-8">
             <div>
-                <h1 className="text-3xl font-semibold text-gray-900 dark:text-white mb-2">Dashboard</h1>
-                <p className="text-gray-600 dark:text-gray-400">Welcome back, {data?.student?.name}</p>
+                <h1 className="text-3xl font-semibold text-gray-900 dark:text-white mb-2">Welcome, {studentData?.name || user?.username}</h1>
+                <p className="text-gray-600 dark:text-gray-400">Student Dashboard</p>
             </div>
 
-            {successMessage && (
-                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200 px-4 py-3 rounded">
-                    {successMessage}
-                </div>
-            )}
-
-            {error && (
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 rounded">
-                    {error}
-                </div>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-gray-800 rounded-lg p-8">
-                    <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">My Information</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* My Info */}
+                <div className="bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-gray-800 rounded-lg p-6">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">My Information</h2>
+                    <div className="space-y-4">
+                        <div className="flex justify-between">
+                            <span className="text-gray-500 dark:text-gray-400">Room Number</span>
+                            <span className="font-medium text-gray-900 dark:text-white">{studentData?.room_number || user?.room_number || 'Not Assigned'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-gray-500 dark:text-gray-400">Email</span>
+                            <span className="font-medium text-gray-900 dark:text-white">{studentData?.email || user?.email}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-gray-500 dark:text-gray-400">Status</span>
+                            <span className="px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">Active</span>
+                        </div>
                         <button
-                            onClick={() => setShowRoomChangeModal(true)}
-                            className="px-4 py-2 bg-accent hover:bg-accent-hover text-white text-sm font-medium rounded transition-colors"
+                            onClick={() => setShowRoomModal(true)}
+                            className="w-full mt-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-medium rounded transition-colors"
                         >
                             Request Room Change
                         </button>
                     </div>
-                    <div className="space-y-5">
-                        <div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Name</div>
-                            <div className="text-base text-gray-900 dark:text-white">{data?.student?.name}</div>
-                        </div>
-                        <div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Email</div>
-                            <div className="text-base text-gray-900 dark:text-white">{data?.student?.email}</div>
-                        </div>
-                        <div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Room Number</div>
-                            <div className="text-base text-gray-900 dark:text-white">{data?.student?.room_number || 'Not Assigned'}</div>
-                        </div>
-                    </div>
                 </div>
 
-                <div className="bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-gray-800 rounded-lg p-8">
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Roommates</h2>
-                    {data?.roommates && data.roommates.length > 0 ? (
-                        <ul className="space-y-3">
-                            {data.roommates.map((roommate, index) => (
-                                <li key={index} className="flex items-center space-x-3 text-base text-gray-900 dark:text-white">
-                                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                    </svg>
-                                    <span>{roommate}</span>
-                                </li>
-                            ))}
-                        </ul>
+                {/* Today's Menu */}
+                <div className="bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-gray-800 rounded-lg p-6">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Today's Menu</h2>
+                    {menu ? (
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm text-gray-500 dark:text-gray-400">Breakfast</span>
+                                <span className="text-sm font-medium text-gray-900 dark:text-white text-right">{menu.breakfast}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm text-gray-500 dark:text-gray-400">Lunch</span>
+                                <span className="text-sm font-medium text-gray-900 dark:text-white text-right">{menu.lunch}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm text-gray-500 dark:text-gray-400">Snacks</span>
+                                <span className="text-sm font-medium text-gray-900 dark:text-white text-right">{menu.snacks}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm text-gray-500 dark:text-gray-400">Dinner</span>
+                                <span className="text-sm font-medium text-gray-900 dark:text-white text-right">{menu.dinner}</span>
+                            </div>
+                        </div>
                     ) : (
-                        <p className="text-base text-gray-500 dark:text-gray-400">No roommates</p>
+                        <p className="text-gray-500 dark:text-gray-400">Menu not available</p>
                     )}
+                </div>
+
+                {/* Recent Complaints */}
+                <div className="bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-gray-800 rounded-lg p-6">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Recent Complaints</h2>
+                    <div className="space-y-4">
+                        {complaints.length > 0 ? (
+                            complaints.map((c) => (
+                                <div key={c.complaint_id} className="p-3 bg-gray-50 dark:bg-gray-900/50 rounded border border-gray-100 dark:border-gray-800">
+                                    <div className="font-medium text-sm text-gray-900 dark:text-white">{c.title}</div>
+                                    <div className="flex justify-between items-center mt-2">
+                                        <span className="text-xs text-gray-500 dark:text-gray-400">{new Date(c.created_at).toLocaleDateString()}</span>
+                                        <span className={`text-xs px-2 py-0.5 rounded ${c.status === 'Resolved' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                            {c.status}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <p className="text-gray-500 dark:text-gray-400">No recent complaints</p>
+                        )}
+                    </div>
                 </div>
             </div>
 
-            {data?.payment && (
-                <div className="bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-gray-800 rounded-lg p-8">
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Payment Status</h2>
-                    <div className="grid grid-cols-3 gap-8">
-                        <div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Amount</div>
-                            <div className="text-2xl font-semibold text-gray-900 dark:text-white">₹{data.payment.amount}</div>
-                        </div>
-                        <div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Status</div>
-                            <span className={`inline-block px-3 py-1 rounded text-sm font-medium ${data.payment.status === 'Paid' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
-                                }`}>
-                                {data.payment.status}
-                            </span>
-                        </div>
-                        <div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Deadline</div>
-                            <div className="text-base text-gray-900 dark:text-white">{new Date(data.payment.deadline).toLocaleDateString()}</div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {data?.today_menu && (
-                <div className="bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-gray-800 rounded-lg p-8">
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Today's Menu</h2>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                        <div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Breakfast</div>
-                            <div className="text-base text-gray-900 dark:text-white">{data.today_menu.breakfast || 'N/A'}</div>
-                        </div>
-                        <div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Lunch</div>
-                            <div className="text-base text-gray-900 dark:text-white">{data.today_menu.lunch || 'N/A'}</div>
-                        </div>
-                        <div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Snacks</div>
-                            <div className="text-base text-gray-900 dark:text-white">{data.today_menu.snacks || 'N/A'}</div>
-                        </div>
-                        <div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Dinner</div>
-                            <div className="text-base text-gray-900 dark:text-white">{data.today_menu.dinner || 'N/A'}</div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {data?.recent_complaints && data.recent_complaints.length > 0 && (
-                <div className="bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-gray-800 rounded-lg p-8">
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Recent Complaints</h2>
-                    <div className="space-y-4">
-                        {data.recent_complaints.map((complaint) => (
-                            <div key={complaint.complaint_id} className="border-l-2 border-gray-200 dark:border-gray-700 pl-5">
-                                <div className="text-base font-medium text-gray-900 dark:text-white">{complaint.complaint_type}</div>
-                                <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">{complaint.description}</div>
-                                <div className="text-sm text-gray-500 dark:text-gray-500 mt-2">Status: {complaint.status}</div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {showRoomChangeModal && (
+            {showRoomModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-gray-800 rounded-lg max-w-lg w-full p-8">
-                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Request Room Change</h3>
-                        <form onSubmit={handleRoomChangeSubmit} className="space-y-5">
+                    <div className="bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-gray-800 rounded-lg max-w-md w-full p-6">
+                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Request Room Change</h2>
+                        <form onSubmit={handleRoomRequest} className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Requested Room Number</label>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Requested Room ID</label>
                                 <input
                                     type="number"
-                                    value={roomChangeRequest.requested_room}
-                                    onChange={(e) => setRoomChangeRequest({ ...roomChangeRequest, requested_room: e.target.value })}
-                                    className="w-full px-4 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded text-base text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-accent"
-                                    placeholder="Enter room number"
+                                    value={roomRequest.requested_room_id}
+                                    onChange={(e) => setRoomRequest({ ...roomRequest, requested_room_id: e.target.value })}
+                                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded focus:ring-2 focus:ring-accent outline-none"
                                     required
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Reason for Change</label>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reason</label>
                                 <textarea
-                                    value={roomChangeRequest.reason}
-                                    onChange={(e) => setRoomChangeRequest({ ...roomChangeRequest, reason: e.target.value })}
-                                    className="w-full px-4 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded text-base text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-accent"
-                                    rows="4"
-                                    placeholder="Explain why you want to change rooms..."
+                                    value={roomRequest.reason}
+                                    onChange={(e) => setRoomRequest({ ...roomRequest, reason: e.target.value })}
+                                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded focus:ring-2 focus:ring-accent outline-none h-24 resize-none"
                                     required
                                 />
                             </div>
-                            <div className="flex space-x-3 pt-2">
+                            <div className="flex justify-end space-x-3 pt-2">
                                 <button
                                     type="button"
-                                    onClick={() => setShowRoomChangeModal(false)}
-                                    className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white text-base font-medium rounded transition-colors"
+                                    onClick={() => setShowRoomModal(false)}
+                                    className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
-                                    className="flex-1 px-4 py-3 bg-accent hover:bg-accent-hover text-white text-base font-medium rounded transition-colors"
+                                    className="px-4 py-2 bg-accent text-white rounded hover:bg-accent-hover"
                                 >
                                     Submit Request
                                 </button>

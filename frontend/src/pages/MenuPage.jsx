@@ -5,9 +5,6 @@ const MenuPage = () => {
     const [menu, setMenu] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [selectedDay, setSelectedDay] = useState('Monday');
-
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
     useEffect(() => {
         loadMenu();
@@ -20,14 +17,17 @@ const MenuPage = () => {
             if (response.data.success) {
                 setMenu(response.data.data);
             } else {
-                setError(response.data.message);
+                setError('Failed to load menu');
             }
         } catch (err) {
-            setError('Failed to load menu');
+            setError('Failed to load menu data');
         } finally {
             setLoading(false);
         }
     };
+
+    const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+    const todayMenu = menu.find(m => m.day === today);
 
     if (loading) {
         return (
@@ -39,60 +39,77 @@ const MenuPage = () => {
 
     if (error) {
         return (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 rounded text-sm">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 rounded">
                 {error}
             </div>
         );
     }
 
-    const dayMenu = menu.find(item => item.day === selectedDay);
-
     return (
-        <div className="space-y-6">
+        <div className="space-y-10">
             <div>
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Food Menu</h2>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Weekly meal schedule</p>
+                <h1 className="text-3xl font-semibold text-gray-900 dark:text-white mb-2">Weekly Menu</h1>
+                <p className="text-gray-600 dark:text-gray-400">Nutritious meals for the week</p>
             </div>
 
-            <div className="flex flex-wrap gap-2">
-                {days.map((day) => (
-                    <button
-                        key={day}
-                        onClick={() => setSelectedDay(day)}
-                        className={`px-3 py-1.5 text-sm font-medium rounded transition-colors ${selectedDay === day
-                            ? 'bg-accent text-white'
-                            : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                            }`}
-                    >
-                        {day}
-                    </button>
-                ))}
-            </div>
-
-            <div className="bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-gray-800 rounded p-5">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">{selectedDay}'s Menu</h3>
-                {dayMenu ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Today's Highlight */}
+            {todayMenu && (
+                <div className="bg-gradient-to-r from-accent to-accent-hover rounded-xl p-8 text-white shadow-lg">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
                         <div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Breakfast</div>
-                            <div className="text-sm text-gray-900 dark:text-white">{dayMenu.breakfast}</div>
+                            <h2 className="text-2xl font-bold mb-1">Today's Special</h2>
+                            <p className="text-white/80">{today}</p>
                         </div>
-                        <div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Lunch</div>
-                            <div className="text-sm text-gray-900 dark:text-white">{dayMenu.lunch}</div>
+                        <span className="bg-white/20 px-3 py-1 rounded-full text-sm font-medium backdrop-blur-sm mt-4 md:mt-0">
+                            Featured
+                        </span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
+                            <div className="text-xs font-bold uppercase tracking-wider text-white/70 mb-2">Breakfast</div>
+                            <div className="font-medium text-lg">{todayMenu.breakfast}</div>
                         </div>
-                        <div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Snacks</div>
-                            <div className="text-sm text-gray-900 dark:text-white">{dayMenu.snacks}</div>
+                        <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
+                            <div className="text-xs font-bold uppercase tracking-wider text-white/70 mb-2">Lunch</div>
+                            <div className="font-medium text-lg">{todayMenu.lunch}</div>
                         </div>
-                        <div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Dinner</div>
-                            <div className="text-sm text-gray-900 dark:text-white">{dayMenu.dinner}</div>
+                        <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
+                            <div className="text-xs font-bold uppercase tracking-wider text-white/70 mb-2">Snacks</div>
+                            <div className="font-medium text-lg">{todayMenu.snacks}</div>
+                        </div>
+                        <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
+                            <div className="text-xs font-bold uppercase tracking-wider text-white/70 mb-2">Dinner</div>
+                            <div className="font-medium text-lg">{todayMenu.dinner}</div>
                         </div>
                     </div>
-                ) : (
-                    <p className="text-sm text-gray-500 dark:text-gray-400">No menu items for this day</p>
-                )}
+                </div>
+            )}
+
+            {/* Weekly Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {menu.filter(m => m.day !== today).map((dayMenu) => (
+                    <div key={dayMenu.id} className="bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-gray-800 rounded-lg p-6 hover:border-accent/50 transition-colors">
+                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">{dayMenu.day}</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Breakfast</div>
+                                <div className="text-sm text-gray-900 dark:text-white">{dayMenu.breakfast}</div>
+                            </div>
+                            <div>
+                                <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Lunch</div>
+                                <div className="text-sm text-gray-900 dark:text-white">{dayMenu.lunch}</div>
+                            </div>
+                            <div>
+                                <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Snacks</div>
+                                <div className="text-sm text-gray-900 dark:text-white">{dayMenu.snacks}</div>
+                            </div>
+                            <div>
+                                <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Dinner</div>
+                                <div className="text-sm text-gray-900 dark:text-white">{dayMenu.dinner}</div>
+                            </div>
+                        </div>
+                    </div>
+                ))}
             </div>
         </div>
     );

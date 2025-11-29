@@ -13,6 +13,7 @@ import ComplaintsPage from './pages/ComplaintsPage';
 import MaintenancePage from './pages/MaintenancePage';
 import MenuPage from './pages/MenuPage';
 import WaitingListPage from './pages/WaitingListPage';
+import AnnouncementsPage from './pages/AnnouncementsPage';
 
 const ProtectedRoute = ({ children, requiredRole }) => {
     const { user, loading } = useAuth();
@@ -88,6 +89,12 @@ function AppRoutes() {
             <Route path="/waiting-list" element={
                 <ProtectedRoute requiredRole="admin">
                     <Layout><WaitingListPage /></Layout>
+                </ProtectedRoute>
+            } />
+
+            <Route path="/announcements" element={
+                <ProtectedRoute>
+                    <Layout><AnnouncementsPage /></Layout>
                 </ProtectedRoute>
             } />
 

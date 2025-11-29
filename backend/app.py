@@ -10,56 +10,29 @@ CORS(app)
 # Initialize database on startup
 init_db()
 
-@app.route('/api/login', methods=['POST'])
-def login():
+def init_announcements_table():
     try:
-        data = request.get_json()
-        if not data or 'email' not in data or 'password' not in data:
-            return jsonify({'success': False, 'message': 'Missing credentials'}), 400
-            
-        email = data['email']
-        password = data['password']
-        user_type = data.get('userType', 'student')
-        
         conn = get_connection()
-        if not conn:
-            return jsonify({'success': False, 'message': 'Database error'}), 500
-            
         cursor = conn.cursor()
-        
-        if user_type == 'admin':
-            cursor.execute("SELECT * FROM admins WHERE username = ? AND password = ?", (email, password))
-            user = cursor.fetchone()
-            if user:
-                conn.close()
-                return jsonify({
-                    'success': True, 
-                    'user': {'id': user['admin_id'], 'username': user['username'], 'type': 'admin'}
-                })
-        else:
-            cursor.execute("SELECT * FROM students WHERE email = ? AND password = ?", (email, password))
-            user = cursor.fetchone()
-            if user:
-                conn.close()
-                return jsonify({
-                    'success': True,
-                    'user': {
-                        'id': user['student_id'],
-                        'name': user['name'],
-                        'email': user['email'],
-                        'room_id': user['room_id'],
-                        'type': 'student'
-                    }
-                })
-        
-        conn.close()
-        return jsonify({'success': False, 'message': 'Invalid credentials'}), 401
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
-
-@app.route('/api/admin/dashboard', methods=['GET'])
-def admin_dashboard():
-    try:
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS announcements (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                message TEXT NOT NULL,
+                category TEXT NOT NULL,
+                date TEXT NOT NULL
+            )
+        """)
+        # Insert sample data if empty
+        cursor.execute("SELECT COUNT(*) FROM announcements")
+        if cursor.fetchone()[0] == 0:
+            cursor.execute("""
+                INSERT INTO announcements (title, message, category, date)
+                VALUES 
+                ('Welcome to the Hostel Management System', 'We are pleased to announce the launch of our new hostel management platform. Please explore all the features available.', 'General', ?),
+                ('Maintenance Schedule', 'Regular maintenance will be conducted on all floors this weekend. Please cooperate with the maintenance team.', 'Maintenance', ?)
+            """, (datetime.now().strftime('%Y-%m-%d'), (datetime.now() - timedelta(days=5)).strftime('%Y-%m-%d')))
+            conn.commit()
         conn = get_connection()
         if not conn:
             return jsonify({'success': False, 'message': 'Database error'}), 500
@@ -570,6 +543,21 @@ def deny_room_change_request(request_id):
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
+@app.route('/api/announcements', methods=['GET'])
+def get_announcements():
+    try:
+        conn = get_connection()
+        if not conn:
+            return jsonify({'success': False, 'message': 'Database error'}), 500
+            
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM announcements ORDER BY date DESC")
+        announcements = [dict(row) for row in cursor.fetchall()]
+        conn.close()
+        
+        return jsonify({'success': True, 'data': announcements})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

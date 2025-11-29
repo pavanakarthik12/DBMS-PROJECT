@@ -1,39 +1,31 @@
 import React, { useState, useEffect } from 'react';
+import { fetchMaintenanceRequests, createMaintenanceRequest, resolveMaintenanceRequest } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { fetchMaintenance, createMaintenance } from '../services/api';
-import { useDashboardRefresh } from '../context/DashboardRefreshContext';
 
 const MaintenancePage = () => {
     const { user } = useAuth();
-    const { triggerDashboardRefresh } = useDashboardRefresh();
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [showModal, setShowModal] = useState(false);
-    const [successMessage, setSuccessMessage] = useState('');
-    const [newRequest, setNewRequest] = useState({
-        category: '',
-        description: '',
-        priority: 'Medium',
-    });
+    const [newRequest, setNewRequest] = useState({ title: '', description: '' });
+    const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
         loadRequests();
-        const interval = setInterval(loadRequests, 5000);
-        return () => clearInterval(interval);
     }, []);
 
     const loadRequests = async () => {
         try {
             setLoading(true);
-            const response = await fetchMaintenance();
+            const response = await fetchMaintenanceRequests();
             if (response.data.success) {
                 setRequests(response.data.data);
             } else {
-                setError(response.data.message);
+                setError('Failed to load maintenance requests');
             }
         } catch (err) {
-            setError('Failed to load maintenance requests');
+            setError('Failed to load maintenance data');
         } finally {
             setLoading(false);
         }
@@ -41,36 +33,43 @@ const MaintenancePage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
-        setSuccessMessage('');
-
-        if (!newRequest.category || !newRequest.description.trim()) {
-            setError('Please fill in all required fields');
-            return;
-        }
-
+        setSubmitting(true);
         try {
-            const response = await createMaintenance({
-                student_id: user.id,
-                room_id: user.room_id || 1,
-                category: newRequest.category,
-                description: newRequest.description,
-                priority: newRequest.priority,
-            });
+            const response = await createMaintenanceRequest(newRequest);
             if (response.data.success) {
                 setShowModal(false);
-                setNewRequest({ category: '', description: '', priority: 'Medium' });
-                setSuccessMessage('Maintenance request submitted successfully');
-                await loadRequests();
-                triggerDashboardRefresh();
-                setTimeout(() => setSuccessMessage(''), 3000);
+                setNewRequest({ title: '', description: '' });
+                loadRequests();
+            } else {
+                alert(response.data.message);
             }
         } catch (err) {
-            setError('Failed to create maintenance request');
+            alert('Failed to submit request');
+        } finally {
+            setSubmitting(false);
         }
     };
 
-    if (loading && requests.length === 0) {
+    const handleResolve = async (id) => {
+        try {
+            const response = await resolveMaintenanceRequest(id);
+            if (response.data.success) {
+                loadRequests();
+            } else {
+                alert(response.data.message);
+            }
+        } catch (err) {
+            alert('Failed to resolve request');
+        }
+    };
+
+    const getStatusColor = (status) => {
+        return status === 'Resolved'
+            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+            : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400';
+    };
+
+    if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
@@ -79,129 +78,105 @@ const MaintenancePage = () => {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-10">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Maintenance Requests</h2>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{requests.length} total</p>
+                    <h1 className="text-3xl font-semibold text-gray-900 dark:text-white mb-2">Maintenance</h1>
+                    <p className="text-gray-600 dark:text-gray-400">Request repairs and services</p>
                 </div>
                 {user?.type === 'student' && (
                     <button
                         onClick={() => setShowModal(true)}
-                        className="px-3 py-1.5 bg-accent hover:bg-accent-hover text-white text-sm font-medium rounded transition-colors"
+                        className="px-6 py-3 bg-accent hover:bg-accent-hover text-white font-medium rounded-lg transition-colors shadow-sm"
                     >
                         New Request
                     </button>
                 )}
             </div>
 
-            {successMessage && (
-                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200 px-4 py-3 rounded text-sm">
-                    {successMessage}
-                </div>
-            )}
-
             {error && (
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 rounded text-sm">
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 rounded">
                     {error}
                 </div>
             )}
 
-            <div className="space-y-3">
-                {requests.length > 0 ? (
-                    requests.map((request) => (
-                        <div key={request.id} className="bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-gray-800 rounded p-4">
-                            <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                    <div className="flex items-center space-x-2 mb-2">
-                                        <h3 className="text-sm font-medium text-gray-900 dark:text-white">{request.category}</h3>
-                                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${request.priority === 'High' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
-                                            request.priority === 'Medium' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
-                                                'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                                            }`}>
-                                            {request.priority}
-                                        </span>
-                                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${request.status === 'Completed' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
-                                            request.status === 'In Progress' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' :
-                                                'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-400'
-                                            }`}>
-                                            {request.status}
-                                        </span>
-                                    </div>
-                                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">{request.description}</p>
-                                    <div className="flex items-center space-x-3 text-xs text-gray-500 dark:text-gray-400">
-                                        {request.room_id && <span>Room #{request.room_id}</span>}
-                                        <span>{new Date(request.created_at).toLocaleDateString()}</span>
-                                    </div>
+            <div className="grid grid-cols-1 gap-6">
+                {requests.map((request) => (
+                    <div key={request.request_id} className="bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-gray-800 rounded-lg p-6 hover:border-accent/50 transition-colors">
+                        <div className="flex items-start justify-between mb-4">
+                            <div>
+                                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">{request.title}</h3>
+                                <div className="flex items-center space-x-3 text-sm text-gray-500 dark:text-gray-400">
+                                    <span>{new Date(request.created_at).toLocaleDateString()}</span>
+                                    {user?.type === 'admin' && <span>• {request.student_name} (Room {request.room_number})</span>}
                                 </div>
                             </div>
+                            <span className={`px-3 py-1 rounded text-xs font-medium ${getStatusColor(request.status)}`}>
+                                {request.status}
+                            </span>
                         </div>
-                    ))
-                ) : (
-                    <div className="bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-gray-800 rounded p-8 text-center">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">No maintenance requests found</p>
+                        <p className="text-gray-700 dark:text-gray-300 mb-6 leading-relaxed">{request.description}</p>
+
+                        {user?.type === 'admin' && request.status !== 'Resolved' && (
+                            <div className="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-800">
+                                <button
+                                    onClick={() => handleResolve(request.request_id)}
+                                    className="text-accent hover:text-accent-hover font-medium text-sm transition-colors"
+                                >
+                                    Mark as Completed
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                ))}
+
+                {requests.length === 0 && (
+                    <div className="bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-gray-800 rounded-lg p-12 text-center">
+                        <p className="text-gray-500 dark:text-gray-400">No maintenance requests found</p>
                     </div>
                 )}
             </div>
 
             {showModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-gray-800 rounded max-w-lg w-full p-5">
-                        <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">New Maintenance Request</h3>
-                        <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" onClick={() => setShowModal(false)}>
+                    <div className="bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-gray-800 rounded-lg max-w-lg w-full p-8" onClick={(e) => e.stopPropagation()}>
+                        <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-6">New Maintenance Request</h2>
+                        <form onSubmit={handleSubmit} className="space-y-6">
                             <div>
-                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Category</label>
-                                <select
-                                    value={newRequest.category}
-                                    onChange={(e) => setNewRequest({ ...newRequest, category: e.target.value })}
-                                    className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-accent"
-                                    required
-                                >
-                                    <option value="">Select category</option>
-                                    <option value="Plumbing">Plumbing</option>
-                                    <option value="Electrical">Electrical</option>
-                                    <option value="Furniture">Furniture</option>
-                                    <option value="Cleaning">Cleaning</option>
-                                    <option value="AC/Heating">AC/Heating</option>
-                                    <option value="Other">Other</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Priority</label>
-                                <select
-                                    value={newRequest.priority}
-                                    onChange={(e) => setNewRequest({ ...newRequest, priority: e.target.value })}
-                                    className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-accent"
-                                >
-                                    <option value="Low">Low</option>
-                                    <option value="Medium">Medium</option>
-                                    <option value="High">High</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Description</label>
-                                <textarea
-                                    value={newRequest.description}
-                                    onChange={(e) => setNewRequest({ ...newRequest, description: e.target.value })}
-                                    className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-accent"
-                                    rows="4"
-                                    placeholder="Describe the issue..."
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Title</label>
+                                <input
+                                    type="text"
+                                    value={newRequest.title}
+                                    onChange={(e) => setNewRequest({ ...newRequest, title: e.target.value })}
+                                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition-all"
+                                    placeholder="e.g., Leaking Tap, Broken Light"
                                     required
                                 />
                             </div>
-                            <div className="flex space-x-2 pt-2">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
+                                <textarea
+                                    value={newRequest.description}
+                                    onChange={(e) => setNewRequest({ ...newRequest, description: e.target.value })}
+                                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition-all h-32 resize-none"
+                                    placeholder="Detailed description of the issue..."
+                                    required
+                                />
+                            </div>
+                            <div className="flex justify-end space-x-4 pt-2">
                                 <button
                                     type="button"
                                     onClick={() => setShowModal(false)}
-                                    className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white text-sm font-medium rounded transition-colors"
+                                    className="px-6 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg font-medium transition-colors"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
-                                    className="flex-1 px-3 py-2 bg-accent hover:bg-accent-hover text-white text-sm font-medium rounded transition-colors"
+                                    disabled={submitting}
+                                    className="px-6 py-2.5 bg-accent hover:bg-accent-hover text-white rounded-lg font-medium transition-colors disabled:opacity-50"
                                 >
-                                    Submit
+                                    {submitting ? 'Submitting...' : 'Submit Request'}
                                 </button>
                             </div>
                         </form>
