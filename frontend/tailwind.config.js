@@ -8,17 +8,17 @@ module.exports = {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                sans: ['Outfit', 'system-ui', '-apple-system', 'sans-serif'],
             },
             fontSize: {
-                xs: '0.75rem',
-                sm: '0.875rem',
-                base: '1rem',
-                lg: '1.125rem',
-                xl: '1.25rem',
-                '2xl': '1.5rem',
-                '3xl': '1.875rem',
-                '4xl': '2.25rem',
+                xs: '0.8125rem',
+                sm: '0.9375rem',
+                base: '1.0625rem',
+                lg: '1.1875rem',
+                xl: '1.375rem',
+                '2xl': '1.625rem',
+                '3xl': '2rem',
+                '4xl': '2.5rem',
             },
             colors: {
                 accent: {
