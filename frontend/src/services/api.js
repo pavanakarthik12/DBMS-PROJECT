@@ -70,4 +70,20 @@ export const createMaintenance = (data) => {
     return api.post('/maintenance', data);
 };
 
+export const fetchRoomChangeRequests = () => {
+    return api.get('/room-change-requests');
+};
+
+export const createRoomChangeRequest = (data) => {
+    return api.post('/room-change-requests', data);
+};
+
+export const approveRoomChangeRequest = (requestId) => {
+    return api.put(`/room-change-requests/${requestId}/approve`);
+};
+
+export const denyRoomChangeRequest = (requestId) => {
+    return api.put(`/room-change-requests/${requestId}/deny`);
+};
+
 export default api;
