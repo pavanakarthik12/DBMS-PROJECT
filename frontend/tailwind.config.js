@@ -8,30 +8,38 @@ module.exports = {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Outfit', 'Open Sans', 'sans-serif'],
+                sans: ['Outfit', 'Open Sans', 'system-ui', '-apple-system', 'sans-serif'],
             },
             fontSize: {
+                xs: '0.8125rem',
+                sm: '0.9375rem',
                 base: '1.125rem',
-                xs: '0.875rem',
-                sm: '1rem',
                 lg: '1.25rem',
                 xl: '1.375rem',
                 '2xl': '1.625rem',
-                '3xl': '2rem',
-                '4xl': '2.5rem',
+                '3xl': '1.875rem',
+                '4xl': '2.25rem',
+                '5xl': '3rem',
             },
             colors: {
                 primary: {
-                    dark: '#0F172A',
-                    DEFAULT: '#1E293B',
+                    dark: '#0A0A0A',
+                    DEFAULT: '#111111',
                 },
                 surface: {
-                    dark: '#111827',
-                    DEFAULT: '#1E293B',
+                    dark: '#171717',
+                    DEFAULT: '#1A1A1A',
                 },
                 accent: {
-                    blue: '#3B82F6',
+                    blue: '#2563EB',
                 },
+                border: {
+                    light: '#E5E7EB',
+                    dark: '#262626',
+                },
+            },
+            maxWidth: {
+                '8xl': '90rem',
             },
         },
     },

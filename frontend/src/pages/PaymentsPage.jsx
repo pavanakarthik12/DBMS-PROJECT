@@ -56,50 +56,53 @@ const PaymentsPage = () => {
 
     if (error && payments.length === 0) {
         return (
-            <div className="bg-red-100 dark:bg-red-900/50 border border-red-300 dark:border-red-700 text-red-800 dark:text-red-200 p-4 rounded-lg">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-6 py-4 rounded-lg">
                 {error}
             </div>
         );
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
             <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Payment Management</h2>
+                <div>
+                    <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">Payment Management</h2>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{payments.length} total payments</p>
+                </div>
                 <button
                     onClick={loadPayments}
-                    className="px-4 py-2 bg-accent-blue hover:bg-blue-600 text-white rounded-lg transition-colors"
+                    className="px-5 py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white text-sm font-medium rounded-md transition-colors"
                 >
                     Refresh
                 </button>
             </div>
 
-            <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-sm">
+            <div className="bg-white dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full">
-                        <thead className="bg-gray-100 dark:bg-gray-800">
+                        <thead className="bg-gray-50 dark:bg-gray-900 border-b border-border-light dark:border-border-dark">
                             <tr>
-                                <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 dark:text-gray-400 uppercase">Student</th>
-                                <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 dark:text-gray-400 uppercase">Room</th>
-                                <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 dark:text-gray-400 uppercase">Amount</th>
-                                <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 dark:text-gray-400 uppercase">Status</th>
-                                <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 dark:text-gray-400 uppercase">Deadline</th>
-                                <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 dark:text-gray-400 uppercase">Actions</th>
+                                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Student</th>
+                                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Room</th>
+                                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Amount</th>
+                                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Deadline</th>
+                                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                        <tbody className="divide-y divide-border-light dark:divide-border-dark">
                             {payments.map((payment) => (
-                                <tr key={payment.payment_id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                                <tr key={payment.payment_id} className="hover:bg-gray-50 dark:hover:bg-gray-900/50">
                                     <td className="px-6 py-4">
                                         <div>
                                             <div className="text-sm font-medium text-gray-900 dark:text-white">{payment.name}</div>
-                                            <div className="text-sm text-gray-600 dark:text-gray-400">{payment.email}</div>
+                                            <div className="text-xs text-gray-500 dark:text-gray-400">{payment.email}</div>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{payment.room_number || 'N/A'}</td>
                                     <td className="px-6 py-4 text-sm font-semibold text-gray-900 dark:text-white">₹{payment.amount}</td>
                                     <td className="px-6 py-4">
-                                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${payment.status === 'Paid' ? 'bg-green-600 text-white' : 'bg-yellow-600 text-white'
+                                        <span className={`px-2.5 py-0.5 rounded text-xs font-medium ${payment.status === 'Paid' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
                                             }`}>
                                             {payment.status}
                                         </span>
@@ -112,7 +115,7 @@ const PaymentsPage = () => {
                                             <button
                                                 onClick={() => handleUpdatePayment(payment.payment_id, 'Paid')}
                                                 disabled={updating === payment.payment_id}
-                                                className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded-lg transition-colors disabled:opacity-50"
+                                                className="px-3 py-1.5 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 text-green-700 dark:text-green-400 text-xs font-medium rounded-md transition-colors disabled:opacity-50"
                                             >
                                                 {updating === payment.payment_id ? 'Updating...' : 'Mark Paid'}
                                             </button>
@@ -120,7 +123,7 @@ const PaymentsPage = () => {
                                             <button
                                                 onClick={() => handleUpdatePayment(payment.payment_id, 'Unpaid')}
                                                 disabled={updating === payment.payment_id}
-                                                className="px-3 py-1 bg-yellow-600 hover:bg-yellow-700 text-white text-xs rounded-lg transition-colors disabled:opacity-50"
+                                                className="px-3 py-1.5 bg-yellow-100 dark:bg-yellow-900/30 hover:bg-yellow-200 dark:hover:bg-yellow-900/50 text-yellow-700 dark:text-yellow-400 text-xs font-medium rounded-md transition-colors disabled:opacity-50"
                                             >
                                                 {updating === payment.payment_id ? 'Updating...' : 'Mark Unpaid'}
                                             </button>

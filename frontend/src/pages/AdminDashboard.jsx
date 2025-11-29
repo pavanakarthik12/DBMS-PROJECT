@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { fetchAdminDashboard } from '../services/api';
+import { fetchAdminDashboard, fetchComplaints, fetchMaintenance, fetchWaitingList } from '../services/api';
 import { useDashboardRefresh } from '../context/DashboardRefreshContext';
 
 const AdminDashboard = () => {
     const [data, setData] = useState(null);
+    const [recentActivity, setRecentActivity] = useState({ complaints: [], maintenance: [], waitingList: [] });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const { refreshTrigger } = useDashboardRefresh();
@@ -20,12 +21,22 @@ const AdminDashboard = () => {
     const loadDashboard = async () => {
         try {
             setLoading(true);
-            const response = await fetchAdminDashboard();
-            if (response.data.success) {
-                setData(response.data.data);
-            } else {
-                setError(response.data.message);
+            const [dashboardRes, complaintsRes, maintenanceRes, waitingListRes] = await Promise.all([
+                fetchAdminDashboard(),
+                fetchComplaints(),
+                fetchMaintenance(),
+                fetchWaitingList()
+            ]);
+
+            if (dashboardRes.data.success) {
+                setData(dashboardRes.data.data);
             }
+
+            setRecentActivity({
+                complaints: complaintsRes.data.success ? complaintsRes.data.data.slice(0, 5) : [],
+                maintenance: maintenanceRes.data.success ? maintenanceRes.data.data.slice(0, 5) : [],
+                waitingList: waitingListRes.data.success ? waitingListRes.data.data.slice(0, 5) : []
+            });
         } catch (err) {
             setError('Failed to load dashboard data');
         } finally {
@@ -43,65 +54,123 @@ const AdminDashboard = () => {
 
     if (error && !data) {
         return (
-            <div className="bg-red-100 dark:bg-red-900/50 border border-red-300 dark:border-red-700 text-red-800 dark:text-red-200 p-6 rounded-lg">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-6 py-4 rounded-lg">
                 {error}
             </div>
         );
     }
 
-    const stats = [
-        { label: 'Total Rooms', value: data?.total_rooms || 0, icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4', color: 'bg-blue-600' },
-        { label: 'Total Students', value: data?.total_students || 0, icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z', color: 'bg-indigo-600' },
-        { label: 'Occupancy Rate', value: `${data?.occupancy_rate || 0}%`, icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z', color: 'bg-green-600' },
-        { label: 'Pending Payments', value: data?.pending_payments || 0, icon: 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z', color: 'bg-yellow-600' },
-        { label: 'Pending Complaints', value: data?.pending_complaints || 0, icon: 'M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z', color: 'bg-red-600' },
-        { label: 'Maintenance Requests', value: data?.pending_maintenance || 0, icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z', color: 'bg-orange-600' },
-        { label: 'Waiting List', value: data?.waiting_list || 0, icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', color: 'bg-purple-600' },
+    const kpis = [
+        { label: 'Total Rooms', value: data?.total_rooms || 0, change: null },
+        { label: 'Occupancy Rate', value: `${data?.occupancy_rate || 0}%`, change: null },
+        { label: 'Pending Payments', value: data?.pending_payments || 0, change: null },
+        { label: 'Active Complaints', value: data?.pending_complaints || 0, change: null },
+        { label: 'Maintenance Requests', value: data?.pending_maintenance || 0, change: null },
+        { label: 'Waiting List', value: data?.waiting_list || 0, change: null },
+        { label: 'Total Students', value: data?.total_students || 0, change: null },
     ];
 
     return (
-        <div className="space-y-10">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                {stats.map((stat, index) => (
-                    <div key={index} className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg p-8 shadow-sm">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{stat.label}</p>
-                                <p className="text-4xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
-                            </div>
-                            <div className={`${stat.color} p-4 rounded-lg`}>
-                                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={stat.icon} />
-                                </svg>
-                            </div>
+        <div className="space-y-12">
+            {/* KPI Metrics */}
+            <div>
+                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-6">Key Metrics</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {kpis.map((kpi, index) => (
+                        <div key={index} className="bg-white dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg p-6">
+                            <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">{kpi.label}</div>
+                            <div className="text-3xl font-semibold text-gray-900 dark:text-white">{kpi.value}</div>
                         </div>
-                    </div>
-                ))}
+                    ))}
+                </div>
             </div>
 
+            {/* Today's Menu */}
             {data?.today_menu && (
-                <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg p-8 shadow-sm">
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Today's Menu</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                        <div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Breakfast</p>
-                            <p className="text-gray-900 dark:text-white font-medium">{data.today_menu.breakfast || 'N/A'}</p>
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Lunch</p>
-                            <p className="text-gray-900 dark:text-white font-medium">{data.today_menu.lunch || 'N/A'}</p>
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Snacks</p>
-                            <p className="text-gray-900 dark:text-white font-medium">{data.today_menu.snacks || 'N/A'}</p>
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Dinner</p>
-                            <p className="text-gray-900 dark:text-white font-medium">{data.today_menu.dinner || 'N/A'}</p>
+                <div>
+                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-6">Today's Menu</h3>
+                    <div className="bg-white dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg p-6">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                            <div>
+                                <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Breakfast</div>
+                                <div className="text-gray-900 dark:text-white">{data.today_menu.breakfast || 'N/A'}</div>
+                            </div>
+                            <div>
+                                <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Lunch</div>
+                                <div className="text-gray-900 dark:text-white">{data.today_menu.lunch || 'N/A'}</div>
+                            </div>
+                            <div>
+                                <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Snacks</div>
+                                <div className="text-gray-900 dark:text-white">{data.today_menu.snacks || 'N/A'}</div>
+                            </div>
+                            <div>
+                                <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Dinner</div>
+                                <div className="text-gray-900 dark:text-white">{data.today_menu.dinner || 'N/A'}</div>
+                            </div>
                         </div>
                     </div>
                 </div>
             )}
+
+            {/* Recent Activity */}
+            <div>
+                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-6">Recent Activity</h3>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Recent Complaints */}
+                    <div className="bg-white dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg p-6">
+                        <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Recent Complaints</h4>
+                        <div className="space-y-4">
+                            {recentActivity.complaints.length > 0 ? (
+                                recentActivity.complaints.map((complaint) => (
+                                    <div key={complaint.complaint_id} className="border-l-2 border-gray-200 dark:border-gray-700 pl-3">
+                                        <div className="text-sm font-medium text-gray-900 dark:text-white">{complaint.complaint_type}</div>
+                                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{complaint.name} • Room {complaint.room_number}</div>
+                                        <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">{new Date(complaint.raised_date).toLocaleDateString()}</div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-sm text-gray-500 dark:text-gray-400">No recent complaints</div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Recent Maintenance */}
+                    <div className="bg-white dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg p-6">
+                        <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Maintenance Requests</h4>
+                        <div className="space-y-4">
+                            {recentActivity.maintenance.length > 0 ? (
+                                recentActivity.maintenance.map((request) => (
+                                    <div key={request.id} className="border-l-2 border-gray-200 dark:border-gray-700 pl-3">
+                                        <div className="text-sm font-medium text-gray-900 dark:text-white">{request.category}</div>
+                                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Room {request.room_id} • {request.priority} Priority</div>
+                                        <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">{new Date(request.created_at).toLocaleDateString()}</div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-sm text-gray-500 dark:text-gray-400">No maintenance requests</div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Waiting List */}
+                    <div className="bg-white dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg p-6">
+                        <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Waiting List</h4>
+                        <div className="space-y-4">
+                            {recentActivity.waitingList.length > 0 ? (
+                                recentActivity.waitingList.map((person) => (
+                                    <div key={person.waiting_id} className="border-l-2 border-gray-200 dark:border-gray-700 pl-3">
+                                        <div className="text-sm font-medium text-gray-900 dark:text-white">{person.student_name}</div>
+                                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{person.phone}</div>
+                                        <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">{new Date(person.join_date).toLocaleDateString()}</div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-sm text-gray-500 dark:text-gray-400">No waiting list entries</div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };

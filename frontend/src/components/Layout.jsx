@@ -30,34 +30,34 @@ const Layout = ({ children }) => {
     const navigation = user?.type === 'admin' ? adminNav : studentNav;
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-primary-dark flex">
+        <div className="min-h-screen bg-white dark:bg-primary-dark flex">
             {/* Sidebar */}
-            <div className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-white dark:bg-surface-dark border-r border-gray-200 dark:border-gray-700 transition-all duration-300 flex flex-col`}>
-                <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                    <h1 className={`font-bold text-xl text-gray-900 dark:text-white ${!sidebarOpen && 'hidden'}`}>Hostel System</h1>
-                    <button onClick={() => setSidebarOpen(!sidebarOpen)} className="mt-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className={`${sidebarOpen ? 'w-72' : 'w-20'} bg-white dark:bg-surface-dark border-r border-border-light dark:border-border-dark transition-all duration-200 flex flex-col`}>
+                <div className="px-6 py-8 border-b border-border-light dark:border-border-dark">
+                    <h1 className={`font-semibold text-xl text-gray-900 dark:text-white ${!sidebarOpen && 'hidden'}`}>Hostel System</h1>
+                    <button onClick={() => setSidebarOpen(!sidebarOpen)} className="mt-4 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={sidebarOpen ? 'M11 19l-7-7 7-7m8 14l-7-7 7-7' : 'M13 5l7 7-7 7M5 5l7 7-7 7'} />
                         </svg>
                     </button>
                 </div>
 
-                <nav className="flex-1 p-4 space-y-2">
+                <nav className="flex-1 px-4 py-6 space-y-2">
                     {navigation.map((item) => {
                         const isActive = location.pathname === item.path;
                         return (
                             <Link
                                 key={item.path}
                                 to={item.path}
-                                className={`flex items-center px-4 py-3 rounded-lg transition-colors ${isActive
-                                        ? 'bg-accent-blue text-white'
-                                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
+                                className={`flex items-center px-4 py-3.5 rounded-lg transition-all duration-150 ${isActive
+                                    ? 'bg-accent-blue text-white shadow-sm'
+                                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/60 hover:text-gray-900 dark:hover:text-white'
                                     }`}
                             >
                                 <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={item.icon} />
                                 </svg>
-                                {sidebarOpen && <span className="ml-3">{item.name}</span>}
+                                {sidebarOpen && <span className="ml-4 font-medium">{item.name}</span>}
                             </Link>
                         );
                     })}
@@ -65,17 +65,16 @@ const Layout = ({ children }) => {
             </div>
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col min-w-0">
                 {/* Top Bar */}
-                <div className="bg-white dark:bg-surface-dark border-b border-gray-200 dark:border-gray-700 px-8 py-4 flex items-center justify-between">
+                <div className="bg-white dark:bg-surface-dark border-b border-border-light dark:border-border-dark px-10 py-6 flex items-center justify-between">
                     <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                         {navigation.find(item => item.path === location.pathname)?.name || 'Dashboard'}
                     </h2>
-                    <div className="flex items-center space-x-4">
-                        {/* Theme Toggle */}
+                    <div className="flex items-center space-x-5">
                         <button
                             onClick={toggleTheme}
-                            className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                            className="p-2.5 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                             title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
                         >
                             {theme === 'dark' ? (
@@ -91,11 +90,11 @@ const Layout = ({ children }) => {
 
                         <div className="text-right">
                             <div className="text-sm font-medium text-gray-900 dark:text-white">{user?.name || user?.username || 'User'}</div>
-                            <div className="text-xs text-gray-600 dark:text-gray-400 capitalize">{user?.type}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 capitalize">{user?.type}</div>
                         </div>
                         <button
                             onClick={logout}
-                            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                            className="px-5 py-2.5 text-sm font-medium bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-lg transition-colors"
                         >
                             Logout
                         </button>
@@ -103,8 +102,10 @@ const Layout = ({ children }) => {
                 </div>
 
                 {/* Page Content */}
-                <div className="flex-1 p-8 overflow-auto bg-gray-50 dark:bg-primary-dark">
-                    {children}
+                <div className="flex-1 overflow-auto bg-white dark:bg-primary-dark">
+                    <div className="max-w-8xl mx-auto px-10 py-12">
+                        {children}
+                    </div>
                 </div>
             </div>
         </div>
