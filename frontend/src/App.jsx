@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { DashboardRefreshProvider } from './context/DashboardRefreshContext';
 import Layout from './components/Layout';
+import RoleProtectedRoute from './components/RoleProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import AdminDashboard from './pages/AdminDashboard';
 import StudentDashboard from './pages/StudentDashboard';
@@ -15,90 +16,66 @@ import MenuPage from './pages/MenuPage';
 import WaitingListPage from './pages/WaitingListPage';
 import AnnouncementsPage from './pages/AnnouncementsPage';
 
-const ProtectedRoute = ({ children, requiredRole }) => {
-    const { user, loading } = useAuth();
-
-    if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-white dark:bg-primary-dark">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-blue"></div>
-            </div>
-        );
-    }
-
-    if (!user) {
-        return <Navigate to="/login" replace />;
-    }
-
-    if (requiredRole && user.type !== requiredRole) {
-        return <Navigate to="/login" replace />;
-    }
-
-    return children;
-};
-
 function AppRoutes() {
     const { user } = useAuth();
 
     return (
         <Routes>
-            <Route path="/login" element={user ? <Navigate to={user.type === 'admin' ? '/admin' : '/student'} replace /> : <LoginPage />} />
+            <Route path="/login" element={user ? <Navigate to={user.role === 'admin' ? '/admin' : '/student'} replace /> : <LoginPage />} />
 
+            {/* Admin Routes */}
             <Route path="/admin" element={
-                <ProtectedRoute requiredRole="admin">
+                <RoleProtectedRoute requiredRole="admin">
                     <Layout><AdminDashboard /></Layout>
-                </ProtectedRoute>
+                </RoleProtectedRoute>
             } />
-
-            <Route path="/student" element={
-                <ProtectedRoute requiredRole="student">
-                    <Layout><StudentDashboard /></Layout>
-                </ProtectedRoute>
-            } />
-
             <Route path="/rooms" element={
-                <ProtectedRoute>
+                <RoleProtectedRoute requiredRole="admin">
                     <Layout><RoomsPage /></Layout>
-                </ProtectedRoute>
+                </RoleProtectedRoute>
             } />
-
             <Route path="/payments" element={
-                <ProtectedRoute requiredRole="admin">
+                <RoleProtectedRoute requiredRole="admin">
                     <Layout><PaymentsPage /></Layout>
-                </ProtectedRoute>
+                </RoleProtectedRoute>
             } />
-
-            <Route path="/complaints" element={
-                <ProtectedRoute>
-                    <Layout><ComplaintsPage /></Layout>
-                </ProtectedRoute>
-            } />
-
-            <Route path="/maintenance" element={
-                <ProtectedRoute>
-                    <Layout><MaintenancePage /></Layout>
-                </ProtectedRoute>
-            } />
-
-            <Route path="/menu" element={
-                <ProtectedRoute>
-                    <Layout><MenuPage /></Layout>
-                </ProtectedRoute>
-            } />
-
             <Route path="/waiting-list" element={
-                <ProtectedRoute requiredRole="admin">
+                <RoleProtectedRoute requiredRole="admin">
                     <Layout><WaitingListPage /></Layout>
-                </ProtectedRoute>
+                </RoleProtectedRoute>
             } />
 
+            {/* Student Routes */}
+            <Route path="/student" element={
+                <RoleProtectedRoute requiredRole="student">
+                    <Layout><StudentDashboard /></Layout>
+                </RoleProtectedRoute>
+            } />
+
+            {/* Shared Routes (Accessible by both but wrapped in protection) */}
+            <Route path="/complaints" element={
+                <RoleProtectedRoute>
+                    <Layout><ComplaintsPage /></Layout>
+                </RoleProtectedRoute>
+            } />
+            <Route path="/maintenance" element={
+                <RoleProtectedRoute>
+                    <Layout><MaintenancePage /></Layout>
+                </RoleProtectedRoute>
+            } />
+            <Route path="/menu" element={
+                <RoleProtectedRoute>
+                    <Layout><MenuPage /></Layout>
+                </RoleProtectedRoute>
+            } />
             <Route path="/announcements" element={
-                <ProtectedRoute>
+                <RoleProtectedRoute>
                     <Layout><AnnouncementsPage /></Layout>
-                </ProtectedRoute>
+                </RoleProtectedRoute>
             } />
 
             <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
     );
 }

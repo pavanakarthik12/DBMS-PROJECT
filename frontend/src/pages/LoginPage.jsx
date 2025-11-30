@@ -1,37 +1,47 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { login } from '../services/api';
 
 const LoginPage = () => {
-    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [userType, setUserType] = useState('student');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
-    const { loginUser } = useAuth();
+    const { login } = useAuth();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!email || !password) {
+            setError('Please fill in all fields');
+            return;
+        }
+
         setError('');
         setLoading(true);
 
         try {
-            // Backend now expects 'username' for both admin and student
-            const response = await login({
-                username,
+            const result = await login({
+                email,
                 password,
                 userType
             });
-            if (response.data.success) {
-                loginUser(response.data.user);
-                navigate(response.data.user.type === 'admin' ? '/admin' : '/student');
+
+            if (result.success) {
+                const user = result.user;
+                // Redirect based on user type
+                if (user.type === 'admin') {
+                    navigate('/admin');
+                } else {
+                    navigate('/student');
+                }
             } else {
-                setError(response.data.message || 'Login failed');
+                setError(result.message || 'Login failed');
             }
         } catch (err) {
-            setError('Invalid credentials. Please try again.');
+            console.error('Login error:', err);
+            setError('Network error. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -39,12 +49,12 @@ const LoginPage = () => {
 
     const handleAutoFill = (type) => {
         if (type === 'admin') {
+            setEmail('admin');
             setUserType('admin');
-            setUsername('admin');
             setPassword('admin123');
         } else {
+            setEmail('student@college.edu');
             setUserType('student');
-            setUsername('student');
             setPassword('student123');
         }
     };
@@ -66,40 +76,28 @@ const LoginPage = () => {
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-5">
-                    {/* User Type Toggle */}
-                    <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-lg mb-6">
-                        <button
-                            type="button"
-                            onClick={() => setUserType('student')}
-                            className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${userType === 'student'
-                                ? 'bg-white dark:bg-[#0F0F0F] text-gray-900 dark:text-white shadow-sm'
-                                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                                }`}
-                        >
-                            Student
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setUserType('admin')}
-                            className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${userType === 'admin'
-                                ? 'bg-white dark:bg-[#0F0F0F] text-gray-900 dark:text-white shadow-sm'
-                                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                                }`}
-                        >
-                            Admin
-                        </button>
-                    </div>
-
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                            Username
+                            Login As
+                        </label>
+                        <select 
+                            value={userType}
+                            onChange={(e) => setUserType(e.target.value)}
+                            className="w-full px-4 py-2.5 bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-gray-800 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition-all text-gray-900 dark:text-white mb-4"
+                        >
+                            <option value="student">Student</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                        
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                            {userType === 'admin' ? 'Username' : 'Email'}
                         </label>
                         <input
-                            type="text"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
+                            type={userType === 'admin' ? 'text' : 'email'}
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                             className="w-full px-4 py-2.5 bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-gray-800 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition-all text-gray-900 dark:text-white placeholder-gray-400"
-                            placeholder="Enter your username"
+                            placeholder={userType === 'admin' ? 'Enter username' : 'Enter email address'}
                             required
                         />
                     </div>

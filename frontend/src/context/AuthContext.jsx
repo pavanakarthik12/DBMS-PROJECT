@@ -14,26 +14,71 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
+
+
     useEffect(() => {
-        const savedUser = localStorage.getItem('user');
-        if (savedUser) {
-            try {
-                const parsed = JSON.parse(savedUser);
-                if (parsed && parsed.type && (parsed.id || parsed.username)) {
-                    setUser(parsed);
-                } else {
+        const initAuth = async () => {
+            // Check for saved user first
+            const savedUser = localStorage.getItem('user');
+            if (savedUser) {
+                try {
+                    const parsed = JSON.parse(savedUser);
+                    if (parsed && (parsed.role || parsed.type)) {
+                        parsed.role = parsed.role || parsed.type;
+                        setUser(parsed);
+                        setLoading(false);
+                        return;
+                    }
+                } catch (error) {
                     localStorage.removeItem('user');
                 }
-            } catch (error) {
-                localStorage.removeItem('user');
             }
-        }
-        setLoading(false);
+            
+            setLoading(false);
+        };
+        
+        initAuth();
     }, []);
 
+    const login = async (credentials) => {
+        try {
+            const response = await fetch('http://localhost:5000/api/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(credentials)
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.user) {
+                    const userToSave = {
+                        ...data.user,
+                        role: data.user.type
+                    };
+                    setUser(userToSave);
+                    localStorage.setItem('user', JSON.stringify(userToSave));
+                    return { success: true, user: userToSave };
+                } else {
+                    return { success: false, message: data.message || 'Login failed' };
+                }
+            } else {
+                const errorData = await response.json();
+                return { success: false, message: errorData.message || 'Login failed' };
+            }
+        } catch (error) {
+            return { success: false, message: 'Network error. Please try again.' };
+        }
+    };
+
     const loginUser = (userData) => {
-        setUser(userData);
-        localStorage.setItem('user', JSON.stringify(userData));
+        const userToSave = {
+            ...userData,
+            role: userData.role || userData.type
+        };
+        setUser(userToSave);
+        localStorage.setItem('user', JSON.stringify(userToSave));
     };
 
     const logout = () => {
@@ -43,7 +88,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, loginUser, logout }}>
+        <AuthContext.Provider value={{ user, loading, login, loginUser, logout }}>
             {children}
         </AuthContext.Provider>
     );

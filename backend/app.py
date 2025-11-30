@@ -10,6 +10,178 @@ CORS(app)
 # Initialize database on startup
 init_db()
 
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    try:
+        data = request.get_json()
+        if not data or 'email' not in data or 'password' not in data:
+            return jsonify({'success': False, 'message': 'Missing credentials'}), 400
+
+        email = data['email']
+        password = data['password']
+        user_type = data.get('userType', 'student')
+
+        conn = get_connection()
+        if not conn:
+            return jsonify({'success': False, 'message': 'Database error'}), 500
+
+        cursor = conn.cursor()
+
+        if user_type == 'admin':
+            cursor.execute("SELECT * FROM admins WHERE username = ? AND password = ?", (email, password))
+            user = cursor.fetchone()
+            if user:
+                conn.close()
+                return jsonify({
+                    'success': True,
+                    'user': {'id': user['admin_id'], 'username': user['username'], 'type': 'admin'}
+                })
+        else:
+            cursor.execute("SELECT * FROM students WHERE email = ? AND password = ?", (email, password))
+            user = cursor.fetchone()
+            if user:
+                conn.close()
+                return jsonify({
+                    'success': True,
+                    'user': {
+                        'id': user['student_id'],
+                        'name': user['name'],
+                        'email': user['email'],
+                        'room_id': user['room_id'],
+                        'type': 'student'
+                    }
+                })
+
+        conn.close()
+        return jsonify({'success': False, 'message': 'Invalid credentials'}), 401
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/admin/dashboard', methods=['GET'])
+def admin_dashboard():
+    try:
+        conn = get_connection()
+        if not conn:
+            return jsonify({'success': False, 'message': 'Database error'}), 500
+            
+        cursor = conn.cursor()
+        
+        # Get statistics
+        cursor.execute("SELECT COUNT(*) as total_rooms FROM rooms")
+        total_rooms = cursor.fetchone()['total_rooms']
+        
+        cursor.execute("SELECT SUM(current_occupancy) as occupied FROM rooms")
+        occupied = cursor.fetchone()['occupied'] or 0
+        
+        cursor.execute("SELECT SUM(capacity) as total_capacity FROM rooms")
+        total_capacity = cursor.fetchone()['total_capacity']
+        
+        occupancy_rate = round((occupied / total_capacity * 100), 1) if total_capacity > 0 else 0
+        
+        cursor.execute("SELECT COUNT(*) as pending_payments FROM payments WHERE status = 'Unpaid'")
+        pending_payments = cursor.fetchone()['pending_payments']
+        
+        cursor.execute("SELECT COUNT(*) as pending_complaints FROM complaints WHERE status = 'Pending'")
+        pending_complaints = cursor.fetchone()['pending_complaints']
+        
+        cursor.execute("SELECT COUNT(*) as waiting_list FROM waiting_list")
+        waiting_list = cursor.fetchone()['waiting_list']
+        
+        cursor.execute("SELECT COUNT(*) as total_students FROM students")
+        total_students = cursor.fetchone()['total_students']
+        
+        # Get today's menu
+        today = datetime.now().strftime('%A')
+        cursor.execute("SELECT * FROM menu WHERE day = ?", (today,))
+        today_menu = cursor.fetchone()
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'total_rooms': total_rooms,
+                'occupied_rooms': occupied,
+                'total_capacity': total_capacity,
+                'occupancy_rate': occupancy_rate,
+                'pending_payments': pending_payments,
+                'pending_complaints': pending_complaints,
+                'waiting_list_count': waiting_list,
+                'total_students': total_students,
+                'today_menu': dict(today_menu) if today_menu else None
+            }
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/student/dashboard/<int:student_id>', methods=['GET'])
+def student_dashboard(student_id):
+    try:
+        conn = get_connection()
+        if not conn:
+            return jsonify({'success': False, 'message': 'Database error'}), 500
+            
+        cursor = conn.cursor()
+        
+        # Get student info with room details
+        cursor.execute("""
+            SELECT s.*, r.room_number, r.capacity
+            FROM students s
+            LEFT JOIN rooms r ON s.room_id = r.room_id
+            WHERE s.student_id = ?
+        """, (student_id,))
+        student = cursor.fetchone()
+        
+        if not student:
+            conn.close()
+            return jsonify({'success': False, 'message': 'Student not found'}), 404
+        
+        # Get roommates
+        roommates = []
+        if student['room_id']:
+            cursor.execute("""
+                SELECT name FROM students 
+                WHERE room_id = ? AND student_id != ?
+            """, (student['room_id'], student_id))
+            roommates = [row['name'] for row in cursor.fetchall()]
+        
+        # Get payment status
+        cursor.execute("""
+            SELECT * FROM payments 
+            WHERE student_id = ? 
+            ORDER BY deadline DESC LIMIT 1
+        """, (student_id,))
+        payment = cursor.fetchone()
+        
+        # Get today's menu
+        today = datetime.now().strftime('%A')
+        cursor.execute("SELECT * FROM menu WHERE day = ?", (today,))
+        today_menu = cursor.fetchone()
+        
+        # Get recent complaints
+        cursor.execute("""
+            SELECT * FROM complaints 
+            WHERE student_id = ? 
+            ORDER BY raised_date DESC LIMIT 5
+        """, (student_id,))
+        complaints = [dict(row) for row in cursor.fetchall()]
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'student': dict(student),
+                'roommates': roommates,
+                'payment': dict(payment) if payment else None,
+                'today_menu': dict(today_menu) if today_menu else None,
+                'recent_complaints': complaints
+            }
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 def init_announcements_table():
     try:
         conn = get_connection()
@@ -74,31 +246,6 @@ def init_announcements_table():
             pending_maintenance = 0
         
         # Get today's menu
-        today = datetime.now().strftime('%A')
-        cursor.execute("SELECT * FROM menu WHERE day = ?", (today,))
-        today_menu = cursor.fetchone()
-        
-        conn.close()
-        
-        return jsonify({
-            'success': True,
-            'data': {
-                'total_rooms': total_rooms,
-                'total_students': total_students,
-                'occupancy_rate': occupancy_rate,
-                'pending_payments': pending_payments,
-                'pending_complaints': pending_complaints,
-                'pending_maintenance': pending_maintenance,
-                'waiting_list': waiting_list,
-                'today_menu': dict(today_menu) if today_menu else None
-            }
-        })
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
-
-@app.route('/api/student/dashboard/<int:student_id>', methods=['GET'])
-def student_dashboard(student_id):
-    try:
         conn = get_connection()
         if not conn:
             return jsonify({'success': False, 'message': 'Database error'}), 500
