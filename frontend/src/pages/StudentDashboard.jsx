@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { fetchMenu, createRoomChangeRequest } from '../services/api';
+import { fetchMenu, createRoomChangeRequest, fetchAvailableRooms } from '../services/api';
 
 const StudentDashboard = () => {
     const { user } = useAuth();
@@ -8,6 +8,7 @@ const StudentDashboard = () => {
     const [complaints, setComplaints] = useState([]);
     const [studentData, setStudentData] = useState(null);
     const [showRoomModal, setShowRoomModal] = useState(false);
+    const [availableRooms, setAvailableRooms] = useState([]);
     const [roomRequest, setRoomRequest] = useState({ requested_room_id: '', reason: '' });
 
     useEffect(() => {
@@ -55,27 +56,57 @@ const StudentDashboard = () => {
         }
     };
 
+    const loadAvailableRooms = async () => {
+        try {
+            const response = await fetchAvailableRooms();
+            if (response.data && response.data.success) {
+                setAvailableRooms(response.data.data);
+            } else {
+                // Demo data for available rooms
+                setAvailableRooms([
+                    { room_id: 101, room_number: '101', capacity: 2, current_occupancy: 1, available_spots: 1 },
+                    { room_id: 102, room_number: '102', capacity: 3, current_occupancy: 1, available_spots: 2 },
+                    { room_id: 201, room_number: '201', capacity: 2, current_occupancy: 0, available_spots: 2 },
+                    { room_id: 203, room_number: '203', capacity: 4, current_occupancy: 2, available_spots: 2 }
+                ]);
+            }
+        } catch (error) {
+            console.log('Backend not available, using demo data');
+            setAvailableRooms([
+                { room_id: 101, room_number: '101', capacity: 2, current_occupancy: 1, available_spots: 1 },
+                { room_id: 102, room_number: '102', capacity: 3, current_occupancy: 1, available_spots: 2 },
+                { room_id: 201, room_number: '201', capacity: 2, current_occupancy: 0, available_spots: 2 },
+                { room_id: 203, room_number: '203', capacity: 4, current_occupancy: 2, available_spots: 2 }
+            ]);
+        }
+    };
+
     const handleRoomRequest = async (e) => {
         e.preventDefault();
+        if (!roomRequest.requested_room_id || !roomRequest.reason.trim()) {
+            alert('Please select a room and provide a reason');
+            return;
+        }
+
         try {
-            try {
-                const response = await createRoomChangeRequest(roomRequest);
-                if (response.data && response.data.success) {
-                    setShowRoomModal(false);
-                    setRoomRequest({ requested_room_id: '', reason: '' });
-                    alert('Request submitted successfully');
-                    return;
-                }
-            } catch (err) {
-                console.log('Backend not available, simulating success');
+            const requestData = {
+                student_id: user?.id || 1,
+                current_room: user?.room_id || 1,
+                requested_room: parseInt(roomRequest.requested_room_id),
+                reason: roomRequest.reason.trim()
+            };
+
+            const response = await createRoomChangeRequest(requestData);
+            if (response.data && response.data.success) {
+                setShowRoomModal(false);
+                setRoomRequest({ requested_room_id: '', reason: '' });
+                alert('Room change request submitted successfully!');
+            } else {
+                alert('Failed to submit request: ' + (response.data?.message || 'Unknown error'));
             }
-            
-            // Fallback for demo
-            setShowRoomModal(false);
-            setRoomRequest({ requested_room_id: '', reason: '' });
-            alert('Room change request submitted successfully (Demo mode)');
         } catch (error) {
-            alert('Failed to submit request');
+            console.error('Error submitting request:', error);
+            alert('Error submitting request. Please try again.');
         }
     };
 
@@ -156,7 +187,10 @@ const StudentDashboard = () => {
                             <span className="px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">Active</span>
                         </div>
                         <button
-                            onClick={() => setShowRoomModal(true)}
+                            onClick={() => {
+                                setShowRoomModal(true);
+                                loadAvailableRooms();
+                            }}
                             className="w-full mt-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-medium rounded transition-colors"
                         >
                             Request Room Change
@@ -246,18 +280,42 @@ const StudentDashboard = () => {
 
             {showRoomModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-gray-800 rounded-lg max-w-md w-full p-6">
+                    <div className="bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-gray-800 rounded-lg max-w-lg w-full p-6">
                         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Request Room Change</h2>
                         <form onSubmit={handleRoomRequest} className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Requested Room ID</label>
-                                <input
-                                    type="number"
-                                    value={roomRequest.requested_room_id}
-                                    onChange={(e) => setRoomRequest({ ...roomRequest, requested_room_id: e.target.value })}
-                                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded focus:ring-2 focus:ring-accent outline-none"
-                                    required
-                                />
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Available Rooms</label>
+                                <div className="space-y-2 max-h-48 overflow-y-auto">
+                                    {availableRooms.length > 0 ? (
+                                        availableRooms.map((room) => (
+                                            <div
+                                                key={room.room_id}
+                                                className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                                                    roomRequest.requested_room_id === room.room_id.toString()
+                                                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                                                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                                                }`}
+                                                onClick={() => setRoomRequest({ ...roomRequest, requested_room_id: room.room_id.toString() })}
+                                            >
+                                                <div className="flex justify-between items-center">
+                                                    <div>
+                                                        <span className="font-medium text-gray-900 dark:text-white">Room {room.room_number}</span>
+                                                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                                                            {room.current_occupancy}/{room.capacity} occupied • {room.available_spots} spot{room.available_spots !== 1 ? 's' : ''} available
+                                                        </div>
+                                                    </div>
+                                                    {roomRequest.requested_room_id === room.room_id.toString() && (
+                                                        <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                                                            <div className="w-2 h-2 bg-white rounded-full"></div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-gray-500 dark:text-gray-400 text-center py-4">Loading available rooms...</p>
+                                    )}
+                                </div>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reason</label>

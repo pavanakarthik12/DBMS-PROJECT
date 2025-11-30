@@ -190,23 +190,24 @@ const AdminDashboard = () => {
                     <div className="space-y-4">
                         {requests.length > 0 ? (
                             requests.map((req) => (
-                                <div key={req.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-100 dark:border-gray-800">
+                                <div key={req.request_id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-100 dark:border-gray-800">
                                     <div>
                                         <div className="font-medium text-gray-900 dark:text-white">{req.student_name}</div>
                                         <div className="text-sm text-gray-500 dark:text-gray-400">
-                                            Room {req.current_room} → Room {req.requested_room}
+                                            Room {req.current_room_number || req.current_room} → Room {req.requested_room_number || req.requested_room}
                                         </div>
                                         <div className="text-xs text-gray-400 mt-1">Reason: {req.reason}</div>
+                                        <div className="text-xs text-gray-400 mt-1">Date: {new Date(req.request_date).toLocaleDateString()}</div>
                                     </div>
                                     <div className="flex space-x-4">
                                         <button
-                                            onClick={() => handleRequestAction(req.id, 'approve')}
+                                            onClick={() => handleRequestAction(req.request_id, 'approve')}
                                             className="px-6 py-3 bg-green-600 text-white font-bold rounded hover:bg-green-700"
                                         >
                                             Approve
                                         </button>
                                         <button
-                                            onClick={() => handleRequestAction(req.id, 'deny')}
+                                            onClick={() => handleRequestAction(req.request_id, 'deny')}
                                             className="px-6 py-3 bg-red-600 text-white font-bold rounded hover:bg-red-700"
                                         >
                                             Deny

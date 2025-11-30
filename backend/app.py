@@ -333,6 +333,28 @@ def get_rooms():
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
+@app.route('/api/available-rooms', methods=['GET'])
+def get_available_rooms():
+    try:
+        conn = get_connection()
+        if not conn:
+            return jsonify({'success': False, 'message': 'Database error'}), 500
+            
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT room_id, room_number, capacity, current_occupancy,
+                   (capacity - current_occupancy) as available_spots
+            FROM rooms
+            WHERE current_occupancy < capacity
+            ORDER BY room_number
+        """)
+        available_rooms = [dict(row) for row in cursor.fetchall()]
+        conn.close()
+        
+        return jsonify({'success': True, 'data': available_rooms})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 @app.route('/api/payments', methods=['GET'])
 def get_payments():
     try:
@@ -475,7 +497,7 @@ def get_menu():
             return jsonify({'success': False, 'message': 'Database error'}), 500
             
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM menu ORDER BY CASE day WHEN 'Monday' THEN 1 WHEN 'Tuesday' THEN 2 WHEN 'Wednesday' THEN 3 WHEN 'Thursday' THEN 4 WHEN 'Friday' THEN 5 WHEN 'Saturday' THEN 6 WHEN 'Sunday' THEN 7 END")
+        cursor.execute("SELECT * FROM menu ORDER BY CASE day WHEN 'Monday' THEN 1 WHEN 'Tuesday' THEN 2 WHEN 'Wednesday' THEN 3 WHEN 'Thursday' THEN 4 WHEN 'Friday' THEN 5 WHEN 'Saturday' THEN 6 WHEN 'Sunday' THEN 7 END, CASE meal_type WHEN 'Breakfast' THEN 1 WHEN 'Lunch' THEN 2 WHEN 'Snacks' THEN 3 WHEN 'Dinner' THEN 4 END")
         menu = [dict(row) for row in cursor.fetchall()]
         conn.close()
         

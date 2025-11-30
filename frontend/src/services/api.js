@@ -13,6 +13,7 @@ export const login = (credentials) => api.post('/login', credentials);
 export const fetchDashboardStats = () => api.get('/admin/dashboard');
 export const fetchStudentDashboard = (id) => api.get(`/student/dashboard/${id}`);
 export const fetchRooms = () => api.get('/rooms');
+export const fetchAvailableRooms = () => api.get('/available-rooms');
 export const fetchPayments = () => api.get('/payments');
 export const fetchComplaints = () => api.get('/complaints');
 export const createComplaint = (data) => api.post('/complaints', data);
