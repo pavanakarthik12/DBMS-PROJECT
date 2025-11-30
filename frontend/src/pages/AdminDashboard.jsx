@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { fetchDashboardStats, fetchRoomChangeRequests, approveRoomChangeRequest, denyRoomChangeRequest, fetchMenu } from '../services/api';
+import { fetchDashboardStats, fetchRoomChangeRequests, approveRoomChangeRequest, denyRoomChangeRequest, fetchMenu, fetchRoomDetails, fetchWaitingList, assignWaitingStudent } from '../services/api';
 import { useDashboardRefresh } from '../context/DashboardRefreshContext';
 
 const AdminDashboard = () => {
@@ -7,6 +7,10 @@ const AdminDashboard = () => {
     const [requests, setRequests] = useState([]);
     const [menu, setMenu] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [selectedRoom, setSelectedRoom] = useState('');
+    const [roomDetails, setRoomDetails] = useState(null);
+    const [showRoomDetails, setShowRoomDetails] = useState(false);
+    const [waitingList, setWaitingList] = useState([]);
     const { refreshTrigger } = useDashboardRefresh();
 
     useEffect(() => {
@@ -26,14 +30,16 @@ const AdminDashboard = () => {
             };
             setMenu(demoMenu);
             
-            const [statsRes, requestsRes, menuRes] = await Promise.all([
+            const [statsRes, requestsRes, menuRes, waitingRes] = await Promise.all([
                 fetchDashboardStats(),
                 fetchRoomChangeRequests(),
-                fetchMenu()
+                fetchMenu(),
+                fetchWaitingList()
             ]);
 
             if (statsRes.data.success) setStats(statsRes.data.data);
             if (requestsRes.data.success) setRequests(requestsRes.data.data);
+            if (waitingRes.data.success) setWaitingList(waitingRes.data.data.filter(s => s.status === 'Waiting'));
             if (menuRes.data.success) {
                 const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
                 const todayMenu = menuRes.data.data.find(m => m.day === today);
@@ -51,12 +57,57 @@ const AdminDashboard = () => {
             const apiCall = action === 'approve' ? approveRoomChangeRequest : denyRoomChangeRequest;
             const response = await apiCall(id);
             if (response.data.success) {
+                // Remove the processed request from the list immediately
+                setRequests(prevRequests => prevRequests.filter(req => req.request_id !== id));
+                alert(`Request ${action}d successfully!`);
+                // Reload dashboard data to update statistics
                 loadDashboardData();
             } else {
-                alert(response.data.message);
+                alert(response.data.message || `Failed to ${action} request`);
             }
         } catch (error) {
-            alert('Failed to process request');
+            console.error(`Error ${action}ing request:`, error);
+            alert(`Failed to ${action} request. Please try again.`);
+        }
+    };
+
+    const handleRoomDetailsView = async () => {
+        if (!selectedRoom) {
+            alert('Please enter a room number');
+            return;
+        }
+        
+        try {
+            const response = await fetchRoomDetails(selectedRoom);
+            if (response.data.success) {
+                setRoomDetails(response.data.data);
+                setShowRoomDetails(true);
+            } else {
+                alert(response.data.message || 'Room not found');
+            }
+        } catch (error) {
+            console.error('Error fetching room details:', error);
+            alert('Failed to fetch room details');
+        }
+    };
+
+    const handleAssignStudent = async (waitingId, roomId) => {
+        if (!roomId) {
+            alert('Please enter a room ID');
+            return;
+        }
+        
+        try {
+            const response = await assignWaitingStudent(waitingId, roomId);
+            if (response.data.success) {
+                alert('Student assigned successfully!');
+                loadDashboardData();
+            } else {
+                alert(response.data.message || 'Failed to assign student');
+            }
+        } catch (error) {
+            console.error('Error assigning student:', error);
+            alert('Failed to assign student');
         }
     };
 
@@ -180,7 +231,7 @@ const AdminDashboard = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Room Change Requests */}
                 <div className="bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 p-8 rounded-lg">
                     <div className="flex items-center justify-between mb-8">
@@ -217,6 +268,124 @@ const AdminDashboard = () => {
                             ))
                         ) : (
                             <p className="text-gray-700 dark:text-gray-300 text-center py-8 text-xl">No pending requests</p>
+                        )}
+                    </div>
+                </div>
+
+                {/* Waiting List */}
+                <div className="bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 p-8 rounded-lg">
+                    <div className="flex items-center justify-between mb-8">
+                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Waiting List</h2>
+                    </div>
+                    <div className="space-y-4">
+                        {waitingList.length > 0 ? (
+                            waitingList.map((student) => (
+                                <div key={student.id} className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-100 dark:border-gray-800">
+                                    <div className="font-medium text-gray-900 dark:text-white">{student.student_name}</div>
+                                    <div className="text-sm text-gray-500 dark:text-gray-400">{student.branch} - Year {student.year_of_study}</div>
+                                    <div className="text-xs text-gray-400 mt-1">Phone: {student.phone}</div>
+                                    <div className="text-xs text-gray-400 mt-1">Join Date: {new Date(student.join_date).toLocaleDateString()}</div>
+                                    <div className="mt-2">
+                                        <input
+                                            type="number"
+                                            placeholder="Room ID"
+                                            className="px-2 py-1 border rounded text-sm mr-2"
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    handleAssignStudent(student.id, parseInt(e.target.value));
+                                                }
+                                            }}
+                                        />
+                                        <button className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">Assign</button>
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <p className="text-gray-700 dark:text-gray-300 text-center py-8 text-xl">No waiting students</p>
+                        )}
+                    </div>
+                </div>
+
+                {/* Room Details Viewer */}
+                <div className="bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 p-8 rounded-lg">
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">Room Details</h2>
+                    <div className="space-y-6">
+                        <div className="flex space-x-4">
+                            <input
+                                type="text"
+                                placeholder="Enter room number"
+                                value={selectedRoom}
+                                onChange={(e) => setSelectedRoom(e.target.value)}
+                                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            />
+                            <button
+                                onClick={handleRoomDetailsView}
+                                className="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700"
+                            >
+                                View Details
+                            </button>
+                        </div>
+
+                        {showRoomDetails && roomDetails && (
+                            <div className="border-t pt-6">
+                                <div className="grid grid-cols-2 gap-4 mb-6">
+                                    <div>
+                                        <span className="text-gray-500 dark:text-gray-400">Room Number:</span>
+                                        <span className="ml-2 font-medium text-gray-900 dark:text-white">{roomDetails.room_number}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-gray-500 dark:text-gray-400">Capacity:</span>
+                                        <span className="ml-2 font-medium text-gray-900 dark:text-white">{roomDetails.capacity}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-gray-500 dark:text-gray-400">Current Occupancy:</span>
+                                        <span className="ml-2 font-medium text-gray-900 dark:text-white">{roomDetails.current_occupancy}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-gray-500 dark:text-gray-400">Available Beds:</span>
+                                        <span className="ml-2 font-medium text-gray-900 dark:text-white">{roomDetails.capacity - roomDetails.current_occupancy}</span>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Students in Room</h3>
+                                    {roomDetails.students && roomDetails.students.length > 0 ? (
+                                        <div className="space-y-3">
+                                            {roomDetails.students.map((student, index) => (
+                                                <div key={index} className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-100 dark:border-gray-800">
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <span className="font-medium text-gray-900 dark:text-white">{student.name}</span>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-sm text-gray-500 dark:text-gray-400">{student.email}</span>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-sm text-gray-500 dark:text-gray-400">Branch: {student.branch}</span>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-sm text-gray-500 dark:text-gray-400">Year: {student.year_of_study}</span>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-sm text-gray-500 dark:text-gray-400">Phone: {student.phone || 'Not provided'}</span>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-sm text-gray-500 dark:text-gray-400">Student ID: {student.student_id}</span>
+                                                        </div>
+                                                        {student.maintenance_problems && (
+                                                            <div className="col-span-2">
+                                                                <span className="text-sm text-red-600 dark:text-red-400">Maintenance: {student.maintenance_problems}</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-gray-500 dark:text-gray-400 text-center py-4">No students in this room</p>
+                                    )}
+                                </div>
+                            </div>
                         )}
                     </div>
                 </div>

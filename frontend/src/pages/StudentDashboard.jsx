@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { fetchMenu, createRoomChangeRequest, fetchAvailableRooms } from '../services/api';
+import { fetchMenu, createRoomChangeRequest, fetchAvailableRooms, fetchStudentDashboard } from '../services/api';
 
 const StudentDashboard = () => {
     const { user } = useAuth();
@@ -26,14 +26,37 @@ const StudentDashboard = () => {
                 { complaint_id: 3, title: 'Water pressure low', status: 'Pending', created_at: '2024-11-23' }
             ]);
 
-            // Set demo student data
-            setStudentData({
-                name: user?.username || 'Student',
-                email: user?.email || 'student@college.edu',
-                room_number: user?.room_number || '101'
-            });
+            // Try to get real student data from API
+            try {
+                const studentRes = await fetchStudentDashboard(user?.id || 1);
+                if (studentRes.data && studentRes.data.success) {
+                    const studentInfo = studentRes.data.data.student;
+                    setStudentData({
+                        name: studentInfo.name || user?.username || 'Student',
+                        email: studentInfo.email || user?.email || 'student@college.edu',
+                        room_number: studentInfo.room_number || user?.room_number || 'Not Assigned',
+                        roommates: studentRes.data.data.roommates || []
+                    });
+                } else {
+                    // Fallback to user data
+                    setStudentData({
+                        name: user?.username || 'Student',
+                        email: user?.email || 'student@college.edu',
+                        room_number: user?.room_number || 'Not Assigned',
+                        roommates: []
+                    });
+                }
+            } catch (err) {
+                // Fallback to user data
+                setStudentData({
+                    name: user?.username || 'Student',
+                    email: user?.email || 'student@college.edu',
+                    room_number: user?.room_number || 'Not Assigned',
+                    roommates: []
+                });
+            }
 
-            // Set demo menu data
+            // Load menu data
             const demoMenu = {
                 breakfast: 'Poha, Tea, Banana',
                 lunch: 'Rice, Dal, Chicken Curry, Salad', 
@@ -46,7 +69,14 @@ const StudentDashboard = () => {
                 const menuRes = await fetchMenu();
                 if (menuRes.data && menuRes.data.success) {
                     const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-                    setMenu(menuRes.data.data.find(m => m.day === today) || demoMenu);
+                    const todayMenu = menuRes.data.data.filter(m => m.day === today);
+                    if (todayMenu.length > 0) {
+                        const menuObj = {};
+                        todayMenu.forEach(meal => {
+                            menuObj[meal.meal_type.toLowerCase()] = meal.item_name;
+                        });
+                        setMenu(menuObj);
+                    }
                 }
             } catch (err) {
                 console.log('Backend menu data not available, using demo data');
@@ -101,6 +131,8 @@ const StudentDashboard = () => {
                 setShowRoomModal(false);
                 setRoomRequest({ requested_room_id: '', reason: '' });
                 alert('Room change request submitted successfully!');
+                // Refresh data to get any updates
+                loadData();
             } else {
                 alert('Failed to submit request: ' + (response.data?.message || 'Unknown error'));
             }
@@ -183,6 +215,26 @@ const StudentDashboard = () => {
                             <span className="font-medium text-gray-900 dark:text-white">{studentData?.email || user?.email}</span>
                         </div>
                         <div className="flex justify-between">
+                            <span className="text-gray-500 dark:text-gray-400">Branch</span>
+                            <span className="font-medium text-gray-900 dark:text-white">{studentData?.branch || 'Not specified'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-gray-500 dark:text-gray-400">Year of Study</span>
+                            <span className="font-medium text-gray-900 dark:text-white">{studentData?.year_of_study || 'Not specified'}</span>
+                        </div>
+                        {studentData?.roommates && studentData.roommates.length > 0 && (
+                            <div>
+                                <span className="text-gray-500 dark:text-gray-400 block mb-2">Roommates</span>
+                                <div className="space-y-1">
+                                    {studentData.roommates.map((roommate, index) => (
+                                        <div key={index} className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            {roommate}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}"}]
+                        <div className="flex justify-between">
                             <span className="text-gray-500 dark:text-gray-400">Status</span>
                             <span className="px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">Active</span>
                         </div>
@@ -242,6 +294,41 @@ const StudentDashboard = () => {
                         </div>
                     )}
                 </div>
+
+                {/* Maintenance Problems History */}
+                {studentData?.maintenance_problems && studentData.maintenance_problems.length > 0 && (
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+                        <div className="flex items-center mb-6">
+                            <div className="text-2xl mr-3">🔧</div>
+                            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Maintenance History</h2>
+                        </div>
+                        <div className="space-y-4">
+                            {studentData.maintenance_problems.map((problem, index) => (
+                                <div key={index} className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <span className="font-medium text-gray-900 dark:text-white">{problem.category}</span>
+                                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                            problem.status === 'Resolved' 
+                                                ? 'bg-green-100 text-green-700' 
+                                                : problem.status === 'Pending'
+                                                ? 'bg-yellow-100 text-yellow-700'
+                                                : 'bg-gray-100 text-gray-700'
+                                        }`}>
+                                            {problem.status}
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{problem.description}</p>
+                                    <div className="flex justify-between text-xs text-gray-500">
+                                        <span>Reported: {new Date(problem.created_at).toLocaleDateString()}</span>
+                                        {problem.resolved_at && (
+                                            <span>Resolved: {new Date(problem.resolved_at).toLocaleDateString()}</span>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 {/* Recent Complaints */}
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">

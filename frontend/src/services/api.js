@@ -14,6 +14,7 @@ export const fetchDashboardStats = () => api.get('/admin/dashboard');
 export const fetchStudentDashboard = (id) => api.get(`/student/dashboard/${id}`);
 export const fetchRooms = () => api.get('/rooms');
 export const fetchAvailableRooms = () => api.get('/available-rooms');
+export const fetchRoomDetails = (roomId) => api.get(`/rooms/${roomId}/details`);
 export const fetchPayments = () => api.get('/payments');
 export const fetchComplaints = () => api.get('/complaints');
 export const createComplaint = (data) => api.post('/complaints', data);
@@ -23,6 +24,7 @@ export const createMaintenanceRequest = (data) => api.post('/maintenance', data)
 export const resolveMaintenanceRequest = (id) => api.put(`/maintenance/${id}/resolve`);
 export const fetchMenu = () => api.get('/menu');
 export const fetchWaitingList = () => api.get('/waiting-list');
+export const assignWaitingStudent = (waitingId, roomId) => api.post(`/admin/waiting-list/${waitingId}/assign`, { room_id: roomId });
 export const fetchRoomChangeRequests = () => api.get('/room-change-requests');
 export const createRoomChangeRequest = (data) => api.post('/room-change-requests', data);
 export const approveRoomChangeRequest = (id) => api.put(`/room-change-requests/${id}/approve`);

@@ -151,16 +151,16 @@ const RoomsPage = () => {
                                 </div>
                             </div>
 
-                            {selectedRoom.students && selectedRoom.students.length > 0 && (
+                            {selectedRoom.students && (
                                 <div>
                                     <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3">Current Residents</h3>
                                     <div className="space-y-2">
-                                        {selectedRoom.students.map((student, index) => (
+                                        {selectedRoom.students.split(',').filter(student => student.trim()).map((student, index) => (
                                             <div key={index} className="flex items-center space-x-3 text-sm text-gray-900 dark:text-white">
                                                 <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                                 </svg>
-                                                <span>{student}</span>
+                                                <span>{student.trim()}</span>
                                             </div>
                                         ))}
                                     </div>

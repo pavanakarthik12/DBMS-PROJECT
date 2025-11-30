@@ -39,7 +39,7 @@ def init_db():
     )
     """)
     
-    # Create Students Table - Added username
+    # Create Students Table - Added username, branch, year_of_study
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS students (
         student_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -52,6 +52,8 @@ def init_db():
         parent_name TEXT,
         parent_phone TEXT,
         address TEXT,
+        branch TEXT,
+        year_of_study INTEGER,
         status TEXT DEFAULT 'Active',
         joined_date TEXT,
         FOREIGN KEY (room_id) REFERENCES rooms (room_id)
@@ -108,6 +110,8 @@ def init_db():
         student_name TEXT NOT NULL,
         phone TEXT NOT NULL,
         email TEXT,
+        branch TEXT,
+        year_of_study INTEGER,
         join_date TEXT NOT NULL,
         status TEXT DEFAULT 'Waiting'
     )
@@ -175,17 +179,17 @@ def init_db():
     for r in rooms:
         cursor.execute("INSERT INTO rooms (room_number, capacity, room_type, floor, price) VALUES (?, ?, ?, ?, ?)", r)
     
-    # Students - Added usernames
+    # Students - Added usernames, branch, year_of_study
     students = [
-        ('John Doe', 'student', 'john@example.com', 'student123', 1, '9876543210', 'Active'),
-        ('Jane Smith', 'jane', 'jane@example.com', 'password123', 2, '9876543211', 'Active'),
-        ('Mike Johnson', 'mike', 'mike@example.com', 'password123', 3, '9876543212', 'Active')
+        ('John Doe', 'student', 'john@example.com', 'student123', 1, '9876543210', 'Computer Science', 2, 'Active'),
+        ('Jane Smith', 'jane', 'jane@example.com', 'password123', 2, '9876543211', 'Mechanical Engineering', 3, 'Active'),
+        ('Mike Johnson', 'mike', 'mike@example.com', 'password123', 3, '9876543212', 'Electrical Engineering', 1, 'Active')
     ]
     for s in students:
         cursor.execute("""
-            INSERT INTO students (name, username, email, password, room_id, phone, status, joined_date) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, (s[0], s[1], s[2], s[3], s[4], s[5], s[6], datetime.now().strftime('%Y-%m-%d')))
+            INSERT INTO students (name, username, email, password, room_id, phone, branch, year_of_study, status, joined_date) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7], s[8], datetime.now().strftime('%Y-%m-%d')))
         
         # Update room occupancy
         cursor.execute("UPDATE rooms SET current_occupancy = current_occupancy + 1 WHERE room_id = ?", (s[4],))
@@ -195,6 +199,18 @@ def init_db():
             INSERT INTO payments (student_id, amount, deadline, payment_type, status)
             VALUES (?, ?, ?, ?, ?)
         """, (rooms[s[4]-1][4], 5000, (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d'), 'Hostel Fee', 'Pending'))
+        
+        # Create maintenance problems
+        if s[4] == 1:
+            cursor.execute("""
+                INSERT INTO maintenance_requests (student_id, room_id, category, description, status, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (s[4], s[4], 'Plumbing', 'Tap is leaking in bathroom', 'Pending', datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+        elif s[4] == 2:
+            cursor.execute("""
+                INSERT INTO maintenance_requests (student_id, room_id, category, description, status, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (s[4], s[4], 'Electrical', 'Fan not working properly', 'Resolved', (datetime.now() - timedelta(days=2)).strftime('%Y-%m-%d %H:%M:%S')))
 
     # Menu
     menu_items = [
@@ -209,6 +225,14 @@ def init_db():
     for m in menu_items:
         cursor.execute("INSERT INTO menu (day, breakfast, lunch, snacks, dinner) VALUES (?, ?, ?, ?, ?)", m)
         
+    # Waiting List
+    cursor.execute("""
+        INSERT INTO waiting_list (student_name, phone, email, branch, year_of_study, join_date)
+        VALUES 
+        ('Alex Brown', '9876543213', 'alex@example.com', 'Civil Engineering', 2, ?),
+        ('Sarah Wilson', '9876543214', 'sarah@example.com', 'Information Technology', 1, ?)
+    """, (datetime.now().strftime('%Y-%m-%d'), (datetime.now() - timedelta(days=3)).strftime('%Y-%m-%d')))
+    
     # Announcements
     cursor.execute("""
         INSERT INTO announcements (title, message, category, date)
