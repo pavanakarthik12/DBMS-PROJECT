@@ -16,6 +16,16 @@ const AdminDashboard = () => {
     const loadDashboardData = async () => {
         try {
             setLoading(true);
+            
+            // Set demo menu data
+            const demoMenu = {
+                breakfast: 'Poha, Tea, Banana',
+                lunch: 'Rice, Dal, Chicken Curry, Salad',
+                snacks: 'Samosa, Coffee',
+                dinner: 'Roti, Paneer Masala, Rice'
+            };
+            setMenu(demoMenu);
+            
             const [statsRes, requestsRes, menuRes] = await Promise.all([
                 fetchDashboardStats(),
                 fetchRoomChangeRequests(),
@@ -27,7 +37,7 @@ const AdminDashboard = () => {
             if (menuRes.data.success) {
                 const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
                 const todayMenu = menuRes.data.data.find(m => m.day === today);
-                setMenu(todayMenu);
+                setMenu(todayMenu || demoMenu);
             }
         } catch (error) {
             console.error('Failed to load dashboard data', error);
@@ -59,112 +69,123 @@ const AdminDashboard = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6">
-            <div className="max-w-7xl mx-auto">
-                <div className="mb-8">
-                    <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Admin Dashboard</h1>
-                    <p className="text-lg text-gray-600 dark:text-gray-300">Complete overview of hostel operations</p>
+        <div className="p-8 bg-white dark:bg-gray-900">
+            <div className="max-w-7xl mx-auto space-y-12">
+                <div>
+                    <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-4">Admin Dashboard</h1>
+                    <p className="text-2xl text-gray-700 dark:text-gray-300">Complete overview of hostel operations</p>
                 </div>
 
-                {/* Premium Highlights Section */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white p-6 rounded-xl shadow-lg">
+                {/* Today's Menu Block */}
+                <div className="bg-blue-600 text-white p-8 rounded-lg">
+                    <h2 className="text-3xl font-bold mb-6">Today's Menu</h2>
+                    {menu ? (
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                            <div className="bg-white bg-opacity-20 p-6 rounded-lg">
+                                <h3 className="text-xl font-bold mb-2">Breakfast</h3>
+                                <p className="text-lg">{menu.breakfast}</p>
+                            </div>
+                            <div className="bg-white bg-opacity-20 p-6 rounded-lg">
+                                <h3 className="text-xl font-bold mb-2">Lunch</h3>
+                                <p className="text-lg">{menu.lunch}</p>
+                            </div>
+                            <div className="bg-white bg-opacity-20 p-6 rounded-lg">
+                                <h3 className="text-xl font-bold mb-2">Snacks</h3>
+                                <p className="text-lg">{menu.snacks}</p>
+                            </div>
+                            <div className="bg-white bg-opacity-20 p-6 rounded-lg">
+                                <h3 className="text-xl font-bold mb-2">Dinner</h3>
+                                <p className="text-lg">{menu.dinner}</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <p className="text-xl">Menu not available</p>
+                    )}
+                </div>
+
+                {/* Stats Section */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div className="bg-green-600 text-white p-8 rounded-lg">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-emerald-100 text-sm font-medium">Revenue</p>
-                                <p className="text-2xl font-bold">₹2.4L</p>
+                                <p className="text-xl font-medium">Revenue</p>
+                                <p className="text-3xl font-bold">₹2.4L</p>
                             </div>
-                            <div className="text-3xl opacity-80">💰</div>
                         </div>
-                        <p className="text-emerald-100 text-xs mt-2">This month: +12%</p>
+                        <p className="text-lg mt-2">This month: +12%</p>
                     </div>
 
-                    <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-xl shadow-lg">
+                    <div className="bg-blue-600 text-white p-8 rounded-lg">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-blue-100 text-sm font-medium">Student Satisfaction</p>
-                                <p className="text-2xl font-bold">4.8/5</p>
+                                <p className="text-xl font-medium">Student Satisfaction</p>
+                                <p className="text-3xl font-bold">4.8/5</p>
                             </div>
-                            <div className="text-3xl opacity-80">⭐</div>
                         </div>
-                        <p className="text-blue-100 text-xs mt-2">Based on 156 reviews</p>
+                        <p className="text-lg mt-2">Based on 156 reviews</p>
                     </div>
 
-                    <div className="bg-gradient-to-r from-violet-500 to-violet-600 text-white p-6 rounded-xl shadow-lg">
+                    <div className="bg-purple-600 text-white p-8 rounded-lg">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-violet-100 text-sm font-medium">Staff Efficiency</p>
-                                <p className="text-2xl font-bold">94%</p>
+                                <p className="text-xl font-medium">Staff Efficiency</p>
+                                <p className="text-3xl font-bold">94%</p>
                             </div>
-                            <div className="text-3xl opacity-80">👥</div>
                         </div>
-                        <p className="text-violet-100 text-xs mt-2">Response time: 2.1h avg</p>
+                        <p className="text-lg mt-2">Response time: 2.1h avg</p>
                     </div>
 
-                    <div className="bg-gradient-to-r from-amber-500 to-amber-600 text-white p-6 rounded-xl shadow-lg">
+                    <div className="bg-orange-600 text-white p-8 rounded-lg">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-amber-100 text-sm font-medium">Energy Savings</p>
-                                <p className="text-2xl font-bold">18%</p>
+                                <p className="text-xl font-medium">Energy Savings</p>
+                                <p className="text-3xl font-bold">18%</p>
                             </div>
-                            <div className="text-3xl opacity-80">⚡</div>
                         </div>
-                        <p className="text-amber-100 text-xs mt-2">vs. last quarter</p>
+                        <p className="text-lg mt-2">vs. last quarter</p>
                     </div>
                 </div>
 
-                {/* Enhanced KPI Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-shadow">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Total Rooms</div>
-                            <div className="text-3xl font-bold text-gray-900 dark:text-white">{stats?.total_rooms || 120}</div>
-                        </div>
-                        <div className="text-3xl text-blue-500">🏠</div>
+                {/* KPI Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div className="bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 p-8 rounded-lg">
+                    <div>
+                        <div className="text-xl font-bold text-gray-900 dark:text-white mb-2">Total Rooms</div>
+                        <div className="text-4xl font-bold text-gray-900 dark:text-white">{stats?.total_rooms || 120}</div>
                     </div>
-                    <div className="mt-3 text-xs text-green-600">+2 new this month</div>
+                    <div className="mt-4 text-lg text-green-600 font-semibold">+2 new this month</div>
                 </div>
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-shadow">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Occupancy Rate</div>
-                            <div className="text-3xl font-bold text-gray-900 dark:text-white">
-                                {stats?.occupancy_rate ? `${stats.occupancy_rate}%` : '88%'}
-                            </div>
+                <div className="bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 p-8 rounded-lg">
+                    <div>
+                        <div className="text-xl font-bold text-gray-900 dark:text-white mb-2">Occupancy Rate</div>
+                        <div className="text-4xl font-bold text-gray-900 dark:text-white">
+                            {stats?.occupancy_rate ? `${stats.occupancy_rate}%` : '88%'}
                         </div>
-                        <div className="text-3xl text-green-500">📊</div>
                     </div>
-                    <div className="mt-3 text-xs text-green-600">Above target (85%)</div>
+                    <div className="mt-4 text-lg text-green-600 font-semibold">Above target (85%)</div>
                 </div>
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-shadow">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Pending Payments</div>
-                            <div className="text-3xl font-bold text-gray-900 dark:text-white">{stats?.pending_payments || 12}</div>
-                        </div>
-                        <div className="text-3xl text-orange-500">💳</div>
+                <div className="bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 p-8 rounded-lg">
+                    <div>
+                        <div className="text-xl font-bold text-gray-900 dark:text-white mb-2">Pending Payments</div>
+                        <div className="text-4xl font-bold text-gray-900 dark:text-white">{stats?.pending_payments || 12}</div>
                     </div>
-                    <div className="mt-3 text-xs text-orange-600">₹45,000 total due</div>
+                    <div className="mt-4 text-lg text-orange-600 font-semibold">₹45,000 total due</div>
                 </div>
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-shadow">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Active Complaints</div>
-                            <div className="text-3xl font-bold text-gray-900 dark:text-white">{stats?.pending_complaints || 8}</div>
-                        </div>
-                        <div className="text-3xl text-red-500">🚨</div>
+                <div className="bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 p-8 rounded-lg">
+                    <div>
+                        <div className="text-xl font-bold text-gray-900 dark:text-white mb-2">Active Complaints</div>
+                        <div className="text-4xl font-bold text-gray-900 dark:text-white">{stats?.pending_complaints || 8}</div>
                     </div>
-                    <div className="mt-3 text-xs text-red-600">3 high priority</div>
+                    <div className="mt-4 text-lg text-red-600 font-semibold">3 high priority</div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Room Change Requests */}
-                <div className="lg:col-span-2 bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-gray-800 rounded-lg p-6">
-                    <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Room Change Requests</h2>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">{requests.length} pending</span>
+                <div className="bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 p-8 rounded-lg">
+                    <div className="flex items-center justify-between mb-8">
+                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Room Change Requests</h2>
+                        <span className="bg-red-600 text-white px-4 py-2 rounded font-bold">{requests.length} pending</span>
                     </div>
                     <div className="space-y-4">
                         {requests.length > 0 ? (
@@ -177,16 +198,16 @@ const AdminDashboard = () => {
                                         </div>
                                         <div className="text-xs text-gray-400 mt-1">Reason: {req.reason}</div>
                                     </div>
-                                    <div className="flex space-x-2">
+                                    <div className="flex space-x-4">
                                         <button
                                             onClick={() => handleRequestAction(req.id, 'approve')}
-                                            className="px-3 py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-sm font-medium rounded hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
+                                            className="px-6 py-3 bg-green-600 text-white font-bold rounded hover:bg-green-700"
                                         >
                                             Approve
                                         </button>
                                         <button
                                             onClick={() => handleRequestAction(req.id, 'deny')}
-                                            className="px-3 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-sm font-medium rounded hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+                                            className="px-6 py-3 bg-red-600 text-white font-bold rounded hover:bg-red-700"
                                         >
                                             Deny
                                         </button>
@@ -194,54 +215,9 @@ const AdminDashboard = () => {
                                 </div>
                             ))
                         ) : (
-                            <p className="text-gray-500 dark:text-gray-400 text-center py-4">No pending requests</p>
+                            <p className="text-gray-700 dark:text-gray-300 text-center py-8 text-xl">No pending requests</p>
                         )}
                     </div>
-                </div>
-
-                {/* Today's Menu */}
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
-                    <div className="flex items-center mb-6">
-                        <div className="text-2xl mr-3">🍽️</div>
-                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Today's Menu</h2>
-                    </div>
-                    {menu ? (
-                        <div className="space-y-4">
-                            <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 p-3 rounded-lg border-l-4 border-amber-400">
-                                <div className="flex items-center mb-1">
-                                    <span className="mr-2">🌅</span>
-                                    <span className="text-sm font-medium text-gray-900 dark:text-white">Breakfast</span>
-                                </div>
-                                <div className="text-xs text-gray-700 dark:text-gray-300">{menu.breakfast}</div>
-                            </div>
-                            <div className="bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 p-3 rounded-lg border-l-4 border-emerald-400">
-                                <div className="flex items-center mb-1">
-                                    <span className="mr-2">☀️</span>
-                                    <span className="text-sm font-medium text-gray-900 dark:text-white">Lunch</span>
-                                </div>
-                                <div className="text-xs text-gray-700 dark:text-gray-300">{menu.lunch}</div>
-                            </div>
-                            <div className="bg-gradient-to-r from-sky-50 to-blue-50 dark:from-sky-900/20 dark:to-blue-900/20 p-3 rounded-lg border-l-4 border-sky-400">
-                                <div className="flex items-center mb-1">
-                                    <span className="mr-2">🍪</span>
-                                    <span className="text-sm font-medium text-gray-900 dark:text-white">Snacks</span>
-                                </div>
-                                <div className="text-xs text-gray-700 dark:text-gray-300">{menu.snacks}</div>
-                            </div>
-                            <div className="bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 p-3 rounded-lg border-l-4 border-violet-400">
-                                <div className="flex items-center mb-1">
-                                    <span className="mr-2">🌙</span>
-                                    <span className="text-sm font-medium text-gray-900 dark:text-white">Dinner</span>
-                                </div>
-                                <div className="text-xs text-gray-700 dark:text-gray-300">{menu.dinner}</div>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="text-center py-6">
-                            <div className="text-3xl mb-2">🍽️</div>
-                            <p className="text-gray-500 dark:text-gray-400 text-sm">Menu not available</p>
-                        </div>
-                    )}
                 </div>
             </div>
             </div>

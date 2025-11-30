@@ -103,21 +103,21 @@ const MaintenancePage = () => {
 
     const getPriorityColor = (priority) => {
         switch (priority) {
-            case 'High': return 'bg-red-100 text-red-800 border-red-200';
-            case 'Medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-            case 'Low': return 'bg-green-100 text-green-800 border-green-200';
-            default: return 'bg-gray-100 text-gray-800 border-gray-200';
+            case 'High': return 'bg-red-600 text-white border-red-600';
+            case 'Medium': return 'bg-yellow-600 text-white border-yellow-600';
+            case 'Low': return 'bg-green-600 text-white border-green-600';
+            default: return 'bg-gray-600 text-white border-gray-600';
         }
     };
 
     const getStatusColor = (status) => {
         switch (status) {
-            case 'Pending': return 'bg-orange-100 text-orange-800 border-orange-200';
-            case 'Approved': return 'bg-blue-100 text-blue-800 border-blue-200';
-            case 'In Progress': return 'bg-purple-100 text-purple-800 border-purple-200';
-            case 'Completed': return 'bg-green-100 text-green-800 border-green-200';
-            case 'Rejected': return 'bg-red-100 text-red-800 border-red-200';
-            default: return 'bg-gray-100 text-gray-800 border-gray-200';
+            case 'Pending': return 'bg-orange-600 text-white border-orange-600';
+            case 'Approved': return 'bg-blue-600 text-white border-blue-600';
+            case 'In Progress': return 'bg-purple-600 text-white border-purple-600';
+            case 'Completed': return 'bg-green-600 text-white border-green-600';
+            case 'Rejected': return 'bg-red-600 text-white border-red-600';
+            default: return 'bg-gray-600 text-white border-gray-600';
         }
     };
 
@@ -141,22 +141,22 @@ const MaintenancePage = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-6">
-            <div className="max-w-7xl mx-auto">
+        <div className="p-8 bg-white dark:bg-gray-900">
+            <div className="max-w-7xl mx-auto space-y-12">
                 {/* Header Section */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 space-y-4 md:space-y-0">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
                     <div>
-                        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+                        <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-4">
                             Maintenance Requests
                         </h1>
-                        <p className="text-lg text-gray-600 dark:text-gray-300">
+                        <p className="text-2xl text-gray-700 dark:text-gray-300">
                             Manage and track maintenance issues efficiently
                         </p>
                     </div>
                     {user?.role === 'student' && (
                         <button
                             onClick={() => setShowModal(true)}
-                            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg transform hover:scale-105 transition-all duration-200"
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-bold text-xl"
                         >
                             + New Request
                         </button>
@@ -165,28 +165,21 @@ const MaintenancePage = () => {
 
                 {/* Summary Cards for Admin */}
                 {user?.role === 'admin' && (
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                         {['Pending', 'In Progress', 'Completed', 'Total'].map((status, index) => {
                             const count = status === 'Total' ? requests.length : 
                                          requests.filter(req => req.status === status).length;
                             const colors = [
-                                'bg-orange-500 to-orange-600',
-                                'bg-purple-500 to-purple-600',
-                                'bg-green-500 to-green-600',
-                                'bg-blue-500 to-blue-600'
+                                'bg-orange-600',
+                                'bg-purple-600',
+                                'bg-green-600',
+                                'bg-blue-600'
                             ];
                             return (
-                                <div key={status} className={`bg-gradient-to-r ${colors[index]} text-white p-6 rounded-xl shadow-lg`}>
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <p className="text-white/80 text-sm font-medium">{status}</p>
-                                            <p className="text-3xl font-bold">{count}</p>
-                                        </div>
-                                        <div className="text-4xl opacity-80">
-                                            {status === 'Total' ? '📊' : 
-                                             status === 'Pending' ? '⏳' :
-                                             status === 'In Progress' ? '🔄' : '✅'}
-                                        </div>
+                                <div key={status} className={`${colors[index]} text-white p-8 rounded-lg`}>
+                                    <div>
+                                        <p className="text-xl font-medium">{status}</p>
+                                        <p className="text-4xl font-bold">{count}</p>
                                     </div>
                                 </div>
                             );
@@ -197,98 +190,91 @@ const MaintenancePage = () => {
                 {/* Requests Grid */}
                 <div className="grid gap-6">
                     {requests.length === 0 ? (
-                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-12 text-center">
-                            <div className="text-6xl mb-4">🛠️</div>
-                            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                        <div className="bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 p-16 text-center rounded-lg">
+                            <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
                                 No maintenance requests found
                             </h3>
-                            <p className="text-gray-600 dark:text-gray-400">
+                            <p className="text-xl text-gray-700 dark:text-gray-300">
                                 {user?.role === 'student' ? 'Submit your first maintenance request to get started' : 'No requests to review at the moment'}
                             </p>
                         </div>
                     ) : (
                         requests.map(request => (
-                            <div key={request.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
-                                <div className="p-6">
-                                    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 space-y-3 lg:space-y-0">
-                                        <div className="flex items-center space-x-4">
-                                            <div className="text-3xl">{getCategoryIcon(request.category)}</div>
-                                            <div>
-                                                <div className="flex items-center space-x-2 mb-1">
-                                                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                                                        Room {request.room_number}
-                                                    </h3>
-                                                    <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getPriorityColor(request.priority)}`}>
-                                                        {request.priority} Priority
-                                                    </span>
-                                                </div>
-                                                <p className="text-sm text-gray-600 dark:text-gray-400">
-                                                    {request.category} • {request.student_name}
-                                                </p>
+                            <div key={request.id} className="bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 p-8 rounded-lg">
+                                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 space-y-4 lg:space-y-0">
+                                    <div className="flex items-center space-x-6">
+                                        <div>
+                                            <div className="flex items-center space-x-4 mb-2">
+                                                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                                                    Room {request.room_number}
+                                                </h3>
+                                                <span className={`px-4 py-2 rounded font-bold border-2 ${getPriorityColor(request.priority)}`}>
+                                                    {request.priority} Priority
+                                                </span>
                                             </div>
-                                        </div>
-                                        <div className="flex items-center space-x-3">
-                                            <span className={`px-4 py-2 rounded-full text-sm font-medium border ${getStatusColor(request.status)}`}>
-                                                {request.status}
-                                            </span>
+                                            <p className="text-lg text-gray-700 dark:text-gray-300">
+                                                {request.category} • {request.student_name}
+                                            </p>
                                         </div>
                                     </div>
+                                    <div>
+                                        <span className={`px-6 py-3 rounded font-bold border-2 ${getStatusColor(request.status)}`}>
+                                            {request.status}
+                                        </span>
+                                    </div>
+                                </div>
 
-                                    <div className="mb-4">
-                                        <p className="text-gray-800 dark:text-gray-200 text-lg leading-relaxed">
-                                            {request.description}
-                                        </p>
-                                    </div>
+                                <div className="mb-6">
+                                    <p className="text-gray-900 dark:text-gray-200 text-xl leading-relaxed">
+                                        {request.description}
+                                    </p>
+                                </div>
 
-                                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-3 md:space-y-0">
-                                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                                            <span className="flex items-center space-x-2">
-                                                <span>📅</span>
-                                                <span>Submitted: {new Date(request.created_at).toLocaleDateString('en-US', { 
-                                                    year: 'numeric', 
-                                                    month: 'long', 
-                                                    day: 'numeric' 
-                                                })}</span>
-                                            </span>
-                                        </div>
-                                        
-                                        {user?.role === 'admin' && request.status !== 'Completed' && (
-                                            <div className="flex space-x-2">
-                                                {request.status === 'Pending' && (
-                                                    <>
-                                                        <button
-                                                            onClick={() => handleStatusUpdate(request.id, 'Approved')}
-                                                            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                                                        >
-                                                            Approve
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleStatusUpdate(request.id, 'Rejected')}
-                                                            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                                                        >
-                                                            Reject
-                                                        </button>
-                                                    </>
-                                                )}
-                                                {request.status === 'Approved' && (
-                                                    <button
-                                                        onClick={() => handleStatusUpdate(request.id, 'In Progress')}
-                                                        className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                                                    >
-                                                        Start Work
-                                                    </button>
-                                                )}
-                                                {request.status === 'In Progress' && (
-                                                    <button
-                                                        onClick={() => handleStatusUpdate(request.id, 'Completed')}
-                                                        className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                                                    >
-                                                        Mark Complete
-                                                    </button>
-                                                )}
-                                            </div>
-                                        )}
+                                <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
+                                    <div className="text-lg text-gray-700 dark:text-gray-300">
+                                        <span>Submitted: {new Date(request.created_at).toLocaleDateString('en-US', { 
+                                            year: 'numeric', 
+                                            month: 'long', 
+                                            day: 'numeric' 
+                                        })}</span>
                                     </div>
+                                    
+                                    {user?.role === 'admin' && request.status !== 'Completed' && (
+                                        <div className="flex space-x-4">
+                                            {request.status === 'Pending' && (
+                                                <>
+                                                    <button
+                                                        onClick={() => handleStatusUpdate(request.id, 'Approved')}
+                                                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-bold"
+                                                    >
+                                                        Approve
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleStatusUpdate(request.id, 'Rejected')}
+                                                        className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-bold"
+                                                    >
+                                                        Reject
+                                                    </button>
+                                                </>
+                                            )}
+                                            {request.status === 'Approved' && (
+                                                <button
+                                                    onClick={() => handleStatusUpdate(request.id, 'In Progress')}
+                                                    className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-bold"
+                                                >
+                                                    Start Work
+                                                </button>
+                                            )}
+                                            {request.status === 'In Progress' && (
+                                                <button
+                                                    onClick={() => handleStatusUpdate(request.id, 'Completed')}
+                                                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-bold"
+                                                >
+                                                    Mark Complete
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))
@@ -298,15 +284,15 @@ const MaintenancePage = () => {
                 {/* New Request Modal */}
                 {showModal && (
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                        <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-md shadow-2xl">
-                            <div className="p-6">
-                                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+                        <div className="bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg w-full max-w-lg">
+                            <div className="p-8">
+                                <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
                                     New Maintenance Request
                                 </h2>
                                 <form onSubmit={handleSubmit}>
-                                    <div className="space-y-4">
+                                    <div className="space-y-6">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            <label className="block text-lg font-bold text-gray-900 dark:text-white mb-3">
                                                 Room Number
                                             </label>
                                             <input
@@ -314,68 +300,68 @@ const MaintenancePage = () => {
                                                 required
                                                 value={newRequest.room_id}
                                                 onChange={(e) => setNewRequest({...newRequest, room_id: e.target.value})}
-                                                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                                                className="w-full p-4 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-lg dark:bg-gray-700 dark:text-white"
                                                 placeholder="Enter your room number"
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            <label className="block text-lg font-bold text-gray-900 dark:text-white mb-3">
                                                 Category
                                             </label>
                                             <select
                                                 required
                                                 value={newRequest.category}
                                                 onChange={(e) => setNewRequest({...newRequest, category: e.target.value})}
-                                                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                                                className="w-full p-4 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-lg dark:bg-gray-700 dark:text-white"
                                             >
-                                                <option value="Electrician">⚡ Electrician</option>
-                                                <option value="Plumber">🔧 Plumber</option>
-                                                <option value="Carpenter">🪵 Carpenter</option>
-                                                <option value="Cleaner">🧽 Cleaner</option>
-                                                <option value="Other">🔨 Other</option>
+                                                <option value="Electrician">Electrician</option>
+                                                <option value="Plumber">Plumber</option>
+                                                <option value="Carpenter">Carpenter</option>
+                                                <option value="Cleaner">Cleaner</option>
+                                                <option value="Other">Other</option>
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            <label className="block text-lg font-bold text-gray-900 dark:text-white mb-3">
                                                 Priority
                                             </label>
                                             <select
                                                 required
                                                 value={newRequest.priority}
                                                 onChange={(e) => setNewRequest({...newRequest, priority: e.target.value})}
-                                                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                                                className="w-full p-4 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-lg dark:bg-gray-700 dark:text-white"
                                             >
-                                                <option value="Low">🟢 Low Priority</option>
-                                                <option value="Medium">🟡 Medium Priority</option>
-                                                <option value="High">🔴 High Priority</option>
+                                                <option value="Low">Low Priority</option>
+                                                <option value="Medium">Medium Priority</option>
+                                                <option value="High">High Priority</option>
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            <label className="block text-lg font-bold text-gray-900 dark:text-white mb-3">
                                                 Description
                                             </label>
                                             <textarea
                                                 required
-                                                rows="4"
+                                                rows="5"
                                                 value={newRequest.description}
                                                 onChange={(e) => setNewRequest({...newRequest, description: e.target.value})}
-                                                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white resize-none"
+                                                className="w-full p-4 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-lg dark:bg-gray-700 dark:text-white resize-none"
                                                 placeholder="Describe the maintenance issue in detail..."
                                             />
                                         </div>
                                     </div>
-                                    <div className="flex space-x-3 mt-6">
+                                    <div className="flex space-x-4 mt-8">
                                         <button
                                             type="button"
                                             onClick={() => setShowModal(false)}
-                                            className="flex-1 px-4 py-3 text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                            className="flex-1 px-6 py-4 text-gray-900 dark:text-gray-300 border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 font-bold text-lg"
                                         >
                                             Cancel
                                         </button>
                                         <button
                                             type="submit"
                                             disabled={submitting}
-                                            className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 font-medium transition-all"
+                                            className="flex-1 px-6 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-bold text-lg"
                                         >
                                             {submitting ? 'Submitting...' : 'Submit Request'}
                                         </button>
