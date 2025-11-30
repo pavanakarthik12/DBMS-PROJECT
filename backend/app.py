@@ -2,12 +2,18 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from database import init_db, get_connection
 import sqlite3
+import os
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
 CORS(app)
 
 # Initialize database on startup
+from database import DATABASE
+try:
+    print(f"DEBUG: Using DATABASE at {os.path.abspath(DATABASE)}")
+except:
+    pass
 init_db()
 
 
@@ -523,13 +529,14 @@ def get_waiting_list():
             return jsonify({'success': False, 'message': 'Database error'}), 500
             
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM waiting_list ORDER BY join_date ASC")
+        cursor.execute("SELECT *, name as student_name, applied_date as join_date FROM waiting_list ORDER BY applied_date ASC")
         waiting_list = [dict(row) for row in cursor.fetchall()]
         conn.close()
         
         return jsonify({'success': True, 'data': waiting_list})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+
 
 @app.route('/api/waiting-list', methods=['POST'])
 def add_to_waiting_list():
@@ -546,7 +553,7 @@ def add_to_waiting_list():
             
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO waiting_list (student_name, phone, join_date)
+            INSERT INTO waiting_list (name, phone, applied_date)
             VALUES (?, ?, ?)
         """, (data['student_name'], data['phone'], data['join_date']))
         
@@ -591,6 +598,7 @@ def create_maintenance_request():
             return jsonify({'success': False, 'message': 'Database error'}), 500
             
         cursor = conn.cursor()
+        from datetime import datetime
         cursor.execute("""
             INSERT INTO maintenance_requests (student_id, room_id, category, description, priority, status, created_at)
             VALUES (?, ?, ?, ?, ?, 'Pending', ?)
@@ -656,6 +664,7 @@ def create_room_change_request():
             return jsonify({'success': False, 'message': 'Database error'}), 500
         
         cursor = conn.cursor()
+        from datetime import datetime
         cursor.execute("""
             INSERT INTO room_change_requests (student_id, current_room, requested_room, reason, status, request_date)
             VALUES (?, ?, ?, ?, 'Pending', ?)
@@ -717,13 +726,20 @@ def deny_room_change_request(request_id):
         
         conn.commit()
         conn.close()
+        if not conn:
+            return jsonify({'success': False, 'message': 'Database error'}), 500
+            
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM announcements ORDER BY date DESC")
+        announcements = [dict(row) for row in cursor.fetchall()]
+        conn.close()
         
-        return jsonify({'success': True, 'message': 'Room change request denied'})
+        return jsonify({'success': True, 'data': announcements})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
-@app.route('/api/rooms/<int:room_id>/details', methods=['GET'])
-def get_room_details(room_id):
+@app.route('/api/rooms/<string:room_identifier>/details', methods=['GET'])
+def get_room_details(room_identifier):
     try:
         conn = get_connection()
         if not conn:
@@ -731,17 +747,25 @@ def get_room_details(room_id):
             
         cursor = conn.cursor()
         
-        # Get room info
-        cursor.execute("SELECT * FROM rooms WHERE room_id = ?", (room_id,))
-        room = cursor.fetchone()
-        
+        # Try to find room by ID or Number
+        room = None
+        if room_identifier.isdigit():
+            cursor.execute("SELECT * FROM rooms WHERE room_id = ?", (int(room_identifier),))
+            room = cursor.fetchone()
+            
+        if not room:
+            cursor.execute("SELECT * FROM rooms WHERE room_number = ?", (room_identifier,))
+            room = cursor.fetchone()
+            
         if not room:
             conn.close()
             return jsonify({'success': False, 'message': 'Room not found'}), 404
+            
+        room_id = room['room_id']
         
-        # Get students in the room with maintenance problems
+        # Get students in room with full details
         cursor.execute("""
-            SELECT s.student_id, s.name, s.email, s.phone, s.branch, s.year_of_study,
+            SELECT s.student_id, s.name, s.email, s.phone, s.branch, s.year_of_study, s.payment_status,
                    GROUP_CONCAT(m.category || ': ' || m.description || ' (' || m.status || ')') as maintenance_problems
             FROM students s
             LEFT JOIN maintenance_requests m ON s.student_id = m.student_id
@@ -768,10 +792,10 @@ def get_room_details(room_id):
 def assign_waiting_student(waiting_id):
     try:
         data = request.json
-        room_id = data.get('room_id')
+        room_identifier = data.get('room_id') # Can be ID or Number
         
-        if not room_id:
-            return jsonify({'success': False, 'message': 'Room ID is required'}), 400
+        if not room_identifier:
+            return jsonify({'success': False, 'message': 'Room Number/ID is required'}), 400
             
         conn = get_connection()
         if not conn:
@@ -779,8 +803,28 @@ def assign_waiting_student(waiting_id):
             
         cursor = conn.cursor()
         
+        # Find room
+        room = None
+        cursor.execute("SELECT * FROM rooms WHERE room_number = ?", (str(room_identifier),))
+        room = cursor.fetchone()
+        
+        if not room and str(room_identifier).isdigit():
+             cursor.execute("SELECT * FROM rooms WHERE room_id = ?", (int(room_identifier),))
+             room = cursor.fetchone()
+        
+        if not room:
+            conn.close()
+            return jsonify({'success': False, 'message': 'Room not found'}), 404
+            
+        room_id = room['room_id']
+        room = dict(room)
+        
+        if room['current_occupancy'] >= room['capacity']:
+            conn.close()
+            return jsonify({'success': False, 'message': 'Room is full'}), 400
+            
         # Get waiting student details
-        cursor.execute("SELECT * FROM waiting_list WHERE id = ?", (waiting_id,))
+        cursor.execute("SELECT * FROM waiting_list WHERE waiting_id = ?", (waiting_id,))
         waiting_student = cursor.fetchone()
         
         if not waiting_student:
@@ -788,37 +832,25 @@ def assign_waiting_student(waiting_id):
             return jsonify({'success': False, 'message': 'Waiting student not found'}), 404
             
         waiting_student = dict(waiting_student)
-        
-        # Check room availability
-        cursor.execute("SELECT capacity, current_occupancy FROM rooms WHERE room_id = ?", (room_id,))
-        room = cursor.fetchone()
-        
-        if not room:
-            conn.close()
-            return jsonify({'success': False, 'message': 'Room not found'}), 404
-            
-        room = dict(room)
-        
-        if room['current_occupancy'] >= room['capacity']:
-            conn.close()
-            return jsonify({'success': False, 'message': 'Room is full'}), 400
             
         # Create student account
-        username = waiting_student['email'].split('@')[0] if waiting_student.get('email') else waiting_student['student_name'].lower().replace(' ', '')
+        # Use 'name' instead of 'student_name'
+        username = waiting_student['email'].split('@')[0] if waiting_student.get('email') else waiting_student['name'].lower().replace(' ', '')
         password = 'student123'  # Default password
         
+        from datetime import datetime
         cursor.execute("""
-            INSERT INTO students (name, username, email, password, room_id, phone, branch, year_of_study, status, joined_date)
+            INSERT INTO students (name, email, password, room_id, phone, branch, year_of_study, status, joined_date, payment_status)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (waiting_student['student_name'], username, waiting_student.get('email', ''), password, 
+        """, (waiting_student['name'], waiting_student.get('email', ''), password, 
                room_id, waiting_student['phone'], waiting_student.get('branch', ''), waiting_student.get('year_of_study', 1),
-               'Active', datetime.now().strftime('%Y-%m-%d')))
+               'Active', datetime.now().strftime('%Y-%m-%d'), 'Pending'))
         
         # Update room occupancy
         cursor.execute("UPDATE rooms SET current_occupancy = current_occupancy + 1 WHERE room_id = ?", (room_id,))
         
         # Update waiting list status
-        cursor.execute("UPDATE waiting_list SET status = 'Assigned' WHERE id = ?", (waiting_id,))
+        cursor.execute("UPDATE waiting_list SET status = 'Assigned' WHERE waiting_id = ?", (waiting_id,))
         
         conn.commit()
         conn.close()
@@ -827,19 +859,56 @@ def assign_waiting_student(waiting_id):
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
-@app.route('/api/announcements', methods=['GET'])
-def get_announcements():
+@app.route('/api/student/dashboard/<int:student_id>', methods=['GET'])
+def get_student_dashboard(student_id):
     try:
         conn = get_connection()
         if not conn:
             return jsonify({'success': False, 'message': 'Database error'}), 500
             
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM announcements ORDER BY date DESC")
-        announcements = [dict(row) for row in cursor.fetchall()]
+        
+        # Get student info
+        cursor.execute("""
+            SELECT s.name, s.email, s.room_id, r.room_number, s.branch, s.year_of_study,
+                   (SELECT status FROM payments WHERE student_id = s.student_id ORDER BY deadline DESC LIMIT 1) as payment_status
+            FROM students s
+            LEFT JOIN rooms r ON s.room_id = r.room_id
+            WHERE s.student_id = ?
+        """, (student_id,))
+        student = cursor.fetchone()
+        
+        if not student:
+            conn.close()
+            return jsonify({'success': False, 'message': 'Student not found'}), 404
+            
+        student = dict(student)
+        
+        # Get roommates
+        roommates = []
+        if student['room_id']:
+            cursor.execute("SELECT name FROM students WHERE room_id = ? AND student_id != ?", (student['room_id'], student_id))
+            roommates = [row['name'] for row in cursor.fetchall()]
+            
+        # Get maintenance problems
+        cursor.execute("""
+            SELECT category, description, status, created_at, resolved_at 
+            FROM maintenance_requests 
+            WHERE student_id = ?
+            ORDER BY created_at DESC
+        """, (student_id,))
+        maintenance_problems = [dict(row) for row in cursor.fetchall()]
+        
         conn.close()
         
-        return jsonify({'success': True, 'data': announcements})
+        return jsonify({
+            'success': True,
+            'data': {
+                'student': student,
+                'roommates': roommates,
+                'maintenance_problems': maintenance_problems
+            }
+        })
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 

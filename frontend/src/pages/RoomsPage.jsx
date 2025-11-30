@@ -41,9 +41,26 @@ const RoomsPage = () => {
         }
     };
 
-    const handleRoomClick = (room) => {
-        setSelectedRoom(room);
-        setShowModal(true);
+    const handleRoomClick = async (room) => {
+        try {
+            // Fetch detailed room info including student details
+            const response = await fetch(`http://127.0.0.1:5000/api/rooms/${room.room_id}/details`);
+            const data = await response.json();
+
+            if (data.success) {
+                setSelectedRoom(data.data);
+                setShowModal(true);
+            } else {
+                console.error('Failed to fetch room details:', data.message);
+                // Fallback to basic room info if detail fetch fails
+                setSelectedRoom(room);
+                setShowModal(true);
+            }
+        } catch (error) {
+            console.error('Error fetching room details:', error);
+            setSelectedRoom(room);
+            setShowModal(true);
+        }
     };
 
     const handleRequestToJoin = async () => {
@@ -150,19 +167,58 @@ const RoomsPage = () => {
                                     </span>
                                 </div>
                             </div>
-
-                            {selectedRoom.students && (
+                            {selectedRoom.students && selectedRoom.students.length > 0 && (
                                 <div>
                                     <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3">Current Residents</h3>
-                                    <div className="space-y-2">
-                                        {selectedRoom.students.split(',').filter(student => student.trim()).map((student, index) => (
-                                            <div key={index} className="flex items-center space-x-3 text-sm text-gray-900 dark:text-white">
-                                                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                                </svg>
-                                                <span>{student.trim()}</span>
-                                            </div>
-                                        ))}
+                                    <div className="overflow-hidden border border-gray-200 dark:border-gray-800 rounded-lg">
+                                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                                            <thead className="bg-gray-50 dark:bg-gray-800">
+                                                <tr>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Branch</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Year</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Maintenance</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Payment</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="bg-white dark:bg-[#0F0F0F] divide-y divide-gray-200 dark:divide-gray-800">
+                                                {Array.isArray(selectedRoom.students) ? selectedRoom.students.map((student, index) => (
+                                                    <tr key={index}>
+                                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-white">{student.name}</td>
+                                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{student.branch || 'Not provided'}</td>
+                                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{student.year_of_study || 'Not provided'}</td>
+                                                        <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                                                            {student.maintenance_problems ? (
+                                                                <span className="text-red-600 dark:text-red-400">{student.maintenance_problems}</span>
+                                                            ) : (
+                                                                <span className="text-green-600 dark:text-green-400">None</span>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                                            {student.payment_status ? (
+                                                                <span className={`px-2 py-1 rounded text-xs font-medium ${student.payment_status === 'Paid' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                                                    }`}>
+                                                                    {student.payment_status}
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-gray-400">Not provided</span>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                )) : (
+                                                    // Fallback for when students is a string (from basic list)
+                                                    typeof selectedRoom.students === 'string' && selectedRoom.students.split(',').filter(s => s.trim()).map((studentName, index) => (
+                                                        <tr key={index}>
+                                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-white">{studentName.trim()}</td>
+                                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">Not provided</td>
+                                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">Not provided</td>
+                                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">Not provided</td>
+                                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">Not provided</td>
+                                                        </tr>
+                                                    ))
+                                                )}
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                             )}

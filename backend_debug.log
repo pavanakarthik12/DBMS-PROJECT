@@ -1,0 +1,1 @@
+DEBUG: Searching for room with identifier: 101\nDEBUG: Found room by number: {'room_id': 1, 'room_number': '101', 'capacity': 2, 'current_occupancy': 0, 'room_type': 'Single', 'monthly_rent': 8000.0}\n
