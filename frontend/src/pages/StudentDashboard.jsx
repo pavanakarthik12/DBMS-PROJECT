@@ -62,23 +62,53 @@ const StudentDashboard = () => {
                 snacks: 'Samosa, Coffee',
                 dinner: 'Roti, Paneer Masala, Rice'
             };
+            
+            // Set demo menu immediately to ensure something is displayed
             setMenu(demoMenu);
 
             try {
                 const menuRes = await fetchMenu();
-                if (menuRes.data && menuRes.data.success) {
+                if (menuRes.data && menuRes.data.success && menuRes.data.data) {
+                    console.log('Student menu data received:', menuRes.data.data);
                     const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-                    const todayMenu = menuRes.data.data.filter(m => m.day === today);
-                    if (todayMenu.length > 0) {
-                        const menuObj = {};
-                        todayMenu.forEach(meal => {
-                            menuObj[meal.meal_type.toLowerCase()] = meal.item_name;
+                    console.log('Today is:', today);
+                    
+                    if (Array.isArray(menuRes.data.data)) {
+                        // Handle array format
+                        const todayMenu = menuRes.data.data.filter(m => m.day === today);
+                        console.log('Todays menu items found:', todayMenu);
+                        if (todayMenu.length > 0) {
+                            const menuObj = {};
+                            todayMenu.forEach(meal => {
+                                const mealType = meal.meal_type?.toLowerCase();
+                                if (mealType) {
+                                    menuObj[mealType] = meal.item_name || menuObj[mealType] || demoMenu[mealType];
+                                }
+                            });
+                            // Only update menu if we have valid data
+                            if (Object.keys(menuObj).length > 0) {
+                                setMenu({
+                                    breakfast: menuObj.breakfast || demoMenu.breakfast,
+                                    lunch: menuObj.lunch || demoMenu.lunch,
+                                    snacks: menuObj.snacks || demoMenu.snacks,
+                                    dinner: menuObj.dinner || demoMenu.dinner
+                                });
+                            }
+                        }
+                    } else if (typeof menuRes.data.data === 'object') {
+                        // Handle direct object format
+                        console.log('Direct menu object:', menuRes.data.data);
+                        setMenu({
+                            breakfast: menuRes.data.data.breakfast || demoMenu.breakfast,
+                            lunch: menuRes.data.data.lunch || demoMenu.lunch,
+                            snacks: menuRes.data.data.snacks || demoMenu.snacks,
+                            dinner: menuRes.data.data.dinner || demoMenu.dinner
                         });
-                        setMenu(menuObj);
                     }
                 }
             } catch (err) {
                 console.log('Backend menu data not available, using demo data');
+                console.error('Menu fetch error:', err);
             }
         } catch (error) {
             console.error('Failed to load student data', error);
@@ -268,43 +298,36 @@ const StudentDashboard = () => {
                             <div className="text-2xl mr-3">🍽️</div>
                             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Today's Menu</h2>
                         </div>
-                        {menu ? (
-                            <div className="space-y-4">
-                                <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 p-4 rounded-lg border-l-4 border-yellow-400">
-                                    <div className="flex items-center mb-2">
-                                        <span className="text-lg mr-2">🌅</span>
-                                        <span className="font-medium text-gray-900 dark:text-white">Breakfast</span>
-                                    </div>
-                                    <span className="text-sm text-gray-700 dark:text-gray-300">{menu.breakfast}</span>
+                        <div className="space-y-4">
+                            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 p-4 rounded-lg border-l-4 border-yellow-400">
+                                <div className="flex items-center mb-2">
+                                    <span className="text-lg mr-2">🌅</span>
+                                    <span className="font-medium text-gray-900 dark:text-white">Breakfast</span>
                                 </div>
-                                <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-lg border-l-4 border-green-400">
-                                    <div className="flex items-center mb-2">
-                                        <span className="text-lg mr-2">☀️</span>
-                                        <span className="font-medium text-gray-900 dark:text-white">Lunch</span>
-                                    </div>
-                                    <span className="text-sm text-gray-700 dark:text-gray-300">{menu.lunch}</span>
-                                </div>
-                                <div className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 p-4 rounded-lg border-l-4 border-blue-400">
-                                    <div className="flex items-center mb-2">
-                                        <span className="text-lg mr-2">🍪</span>
-                                        <span className="font-medium text-gray-900 dark:text-white">Snacks</span>
-                                    </div>
-                                    <span className="text-sm text-gray-700 dark:text-gray-300">{menu.snacks}</span>
-                                </div>
-                                <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 p-4 rounded-lg border-l-4 border-purple-400">
-                                    <div className="flex items-center mb-2">
-                                        <span className="text-lg mr-2">🌙</span>
-                                        <span className="font-medium text-gray-900 dark:text-white">Dinner</span>
-                                    </div>
-                                    <span className="text-sm text-gray-700 dark:text-gray-300">{menu.dinner}</span>
-                                </div>
+                                <span className="text-sm text-gray-700 dark:text-gray-300">{menu?.breakfast || 'Poha, Tea, Banana'}</span>
                             </div>
-                        ) : (
-                            <div className="text-center py-8">
-                                <div className="text-4xl mb-2">🍽️</div>
-                                <p className="text-gray-500 dark:text-gray-400">Menu not available</p>
+                            <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-lg border-l-4 border-green-400">
+                                <div className="flex items-center mb-2">
+                                    <span className="text-lg mr-2">☀️</span>
+                                    <span className="font-medium text-gray-900 dark:text-white">Lunch</span>
+                                </div>
+                                <span className="text-sm text-gray-700 dark:text-gray-300">{menu?.lunch || 'Rice, Dal, Chicken Curry, Salad'}</span>
                             </div>
-                        )}
+                            <div className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 p-4 rounded-lg border-l-4 border-blue-400">
+                                <div className="flex items-center mb-2">
+                                    <span className="text-lg mr-2">🍪</span>
+                                    <span className="font-medium text-gray-900 dark:text-white">Snacks</span>
+                                </div>
+                                <span className="text-sm text-gray-700 dark:text-gray-300">{menu?.snacks || 'Samosa, Coffee'}</span>
+                            </div>
+                            <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 p-4 rounded-lg border-l-4 border-purple-400">
+                                <div className="flex items-center mb-2">
+                                    <span className="text-lg mr-2">🌙</span>
+                                    <span className="font-medium text-gray-900 dark:text-white">Dinner</span>
+                                </div>
+                                <span className="text-sm text-gray-700 dark:text-gray-300">{menu?.dinner || 'Roti, Paneer Masala, Rice'}</span>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Maintenance Problems History */}
@@ -419,7 +442,7 @@ const StudentDashboard = () => {
                                     <textarea
                                         value={roomRequest.reason}
                                         onChange={(e) => setRoomRequest({ ...roomRequest, reason: e.target.value })}
-                                        className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded focus:ring-2 focus:ring-accent outline-none h-24 resize-none"
+                                        className="w-full px-4 py-3 text-lg rounded-lg border outline-none focus:ring-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-accent transition-all h-24 resize-none"
                                         required
                                     />
                                 </div>

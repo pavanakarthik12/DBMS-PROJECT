@@ -4,7 +4,6 @@ import { fetchAnnouncements } from '../services/api';
 const AnnouncementsPage = () => {
     const [announcements, setAnnouncements] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
 
     useEffect(() => {
         loadAnnouncements();
@@ -14,13 +13,11 @@ const AnnouncementsPage = () => {
         try {
             setLoading(true);
             const response = await fetchAnnouncements();
-            if (response.data.success) {
+            if (response.data && response.data.success) {
                 setAnnouncements(response.data.data);
-            } else {
-                setError('Failed to load announcements');
             }
         } catch (err) {
-            setError('Failed to load announcements data');
+            console.error('Failed to load announcements:', err);
         } finally {
             setLoading(false);
         }

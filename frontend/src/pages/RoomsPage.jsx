@@ -18,7 +18,7 @@ const RoomsPage = () => {
         try {
             setLoading(true);
             const response = await fetchRooms();
-            if (response.data.success) {
+            if (response.data && response.data.success) {
                 setRooms(response.data.data);
             } else {
                 setError('Failed to load rooms');
@@ -47,7 +47,7 @@ const RoomsPage = () => {
             const response = await fetch(`http://127.0.0.1:5000/api/rooms/${room.room_id}/details`);
             const data = await response.json();
 
-            if (data.success) {
+            if (data && data.success) {
                 setSelectedRoom(data.data);
                 setShowModal(true);
             } else {

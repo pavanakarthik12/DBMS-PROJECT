@@ -83,7 +83,7 @@ const LoginPage = () => {
                         <select 
                             value={userType}
                             onChange={(e) => setUserType(e.target.value)}
-                            className="w-full px-4 py-2.5 bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-gray-800 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition-all text-gray-900 dark:text-white mb-4"
+                            className="w-full px-4 py-3 text-lg rounded-lg border outline-none focus:ring-2 bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-accent focus:border-transparent transition-all text-gray-900 dark:text-white mb-4"
                         >
                             <option value="student">Student</option>
                             <option value="admin">Admin</option>
@@ -96,7 +96,7 @@ const LoginPage = () => {
                             type={userType === 'admin' ? 'text' : 'email'}
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="w-full px-4 py-2.5 bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-gray-800 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition-all text-gray-900 dark:text-white placeholder-gray-400"
+                            className="w-full px-4 py-3 text-lg rounded-lg border outline-none focus:ring-2 bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-accent focus:border-transparent transition-all text-gray-900 dark:text-white placeholder-gray-400"
                             placeholder={userType === 'admin' ? 'Enter username' : 'Enter email address'}
                             required
                         />
@@ -107,7 +107,7 @@ const LoginPage = () => {
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-4 py-2.5 bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-gray-800 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition-all text-gray-900 dark:text-white placeholder-gray-400"
+                            className="w-full px-4 py-3 text-lg rounded-lg border outline-none focus:ring-2 bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-accent focus:border-transparent transition-all text-gray-900 dark:text-white placeholder-gray-400"
                             placeholder="Enter your password"
                             required
                         />

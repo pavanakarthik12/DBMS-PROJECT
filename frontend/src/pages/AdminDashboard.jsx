@@ -10,7 +10,6 @@ const AdminDashboard = () => {
     const [selectedRoom, setSelectedRoom] = useState('');
     const [roomDetails, setRoomDetails] = useState(null);
     const [showRoomDetails, setShowRoomDetails] = useState(false);
-    const [waitingList, setWaitingList] = useState([]);
     const { refreshTrigger } = useDashboardRefresh();
 
     useEffect(() => {
@@ -28,22 +27,44 @@ const AdminDashboard = () => {
                 snacks: 'Samosa, Coffee',
                 dinner: 'Roti, Paneer Masala, Rice'
             };
+            
+            // Set demo menu immediately to ensure something is displayed
             setMenu(demoMenu);
 
-            const [statsRes, requestsRes, menuRes, waitingRes] = await Promise.all([
+            const [statsRes, requestsRes, menuRes] = await Promise.all([
                 fetchDashboardStats(),
                 fetchRoomChangeRequests(),
-                fetchMenu(),
-                fetchWaitingList()
+                fetchMenu()
             ]);
 
-            if (statsRes.data.success) setStats(statsRes.data.data);
-            if (requestsRes.data.success) setRequests(requestsRes.data.data);
-            if (waitingRes.data.success) setWaitingList(waitingRes.data.data.filter(s => s.status === 'Waiting'));
-            if (menuRes.data.success) {
-                const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-                const todayMenu = menuRes.data.data.find(m => m.day === today);
-                setMenu(todayMenu || demoMenu);
+            if (statsRes.data && statsRes.data.success) setStats(statsRes.data.data);
+            if (requestsRes.data && requestsRes.data.success) setRequests(requestsRes.data.data);
+            if (menuRes.data && menuRes.data.success && menuRes.data.data) {
+                console.log('Menu data received:', menuRes.data.data);
+                // If we get menu data, try to find today's menu
+                if (Array.isArray(menuRes.data.data)) {
+                    const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+                    console.log('Today is:', today);
+                    const todayMenu = menuRes.data.data.find(m => m.day === today);
+                    console.log('Todays menu found:', todayMenu);
+                    if (todayMenu) {
+                        setMenu({
+                            breakfast: todayMenu.breakfast || demoMenu.breakfast,
+                            lunch: todayMenu.lunch || demoMenu.lunch,
+                            snacks: todayMenu.snacks || demoMenu.snacks,
+                            dinner: todayMenu.dinner || demoMenu.dinner
+                        });
+                    }
+                } else {
+                    // If menu data is not an array, use it directly
+                    console.log('Direct menu data:', menuRes.data.data);
+                    setMenu({
+                        breakfast: menuRes.data.data.breakfast || demoMenu.breakfast,
+                        lunch: menuRes.data.data.lunch || demoMenu.lunch,
+                        snacks: menuRes.data.data.snacks || demoMenu.snacks,
+                        dinner: menuRes.data.data.dinner || demoMenu.dinner
+                    });
+                }
             }
         } catch (error) {
             console.error('Failed to load dashboard data', error);
@@ -56,18 +77,18 @@ const AdminDashboard = () => {
         try {
             const apiCall = action === 'approve' ? approveRoomChangeRequest : denyRoomChangeRequest;
             const response = await apiCall(id);
-            if (response.data.success) {
+            if (response.data && response.data.success) {
                 // Remove the processed request from the list immediately
                 setRequests(prevRequests => prevRequests.filter(req => req.request_id !== id));
                 alert(`Request ${action}d successfully!`);
                 // Reload dashboard data to update statistics
                 loadDashboardData();
             } else {
-                alert(response.data.message || `Failed to ${action} request`);
+                alert(response.data?.message || `Failed to ${action} request`);
             }
         } catch (error) {
             console.error(`Error ${action}ing request:`, error);
-            alert(`Failed to ${action} request. Please try again.`);
+            alert(`Failed to ${action} request: ` + (error.response?.data?.message || error.message));
         }
     };
 
@@ -79,11 +100,11 @@ const AdminDashboard = () => {
 
         try {
             const response = await fetchRoomDetails(selectedRoom);
-            if (response.data.success) {
+            if (response.data && response.data.success) {
                 setRoomDetails(response.data.data);
                 setShowRoomDetails(true);
             } else {
-                alert(response.data.message || 'Room not found');
+                alert(response.data?.message || 'Room not found');
             }
         } catch (error) {
             console.error('Error fetching room details:', error);
@@ -91,25 +112,7 @@ const AdminDashboard = () => {
         }
     };
 
-    const handleAssignStudent = async (waitingId, roomId) => {
-        if (!roomId) {
-            alert('Please enter a room ID');
-            return;
-        }
 
-        try {
-            const response = await assignWaitingStudent(waitingId, roomId);
-            if (response.data.success) {
-                alert('Student assigned successfully!');
-                loadDashboardData();
-            } else {
-                alert(response.data.message || 'Failed to assign student');
-            }
-        } catch (error) {
-            console.error('Error assigning student:', error);
-            alert('Failed to assign student');
-        }
-    };
 
     if (loading) {
         return (
@@ -130,28 +133,24 @@ const AdminDashboard = () => {
                 {/* Today's Menu Block */}
                 <div className="bg-blue-600 text-white p-8 rounded-lg">
                     <h2 className="text-3xl font-bold mb-6">Today's Menu</h2>
-                    {menu ? (
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                            <div className="bg-white bg-opacity-20 p-6 rounded-lg">
-                                <h3 className="text-xl font-bold mb-2">Breakfast</h3>
-                                <p className="text-lg">{menu.breakfast}</p>
-                            </div>
-                            <div className="bg-white bg-opacity-20 p-6 rounded-lg">
-                                <h3 className="text-xl font-bold mb-2">Lunch</h3>
-                                <p className="text-lg">{menu.lunch}</p>
-                            </div>
-                            <div className="bg-white bg-opacity-20 p-6 rounded-lg">
-                                <h3 className="text-xl font-bold mb-2">Snacks</h3>
-                                <p className="text-lg">{menu.snacks}</p>
-                            </div>
-                            <div className="bg-white bg-opacity-20 p-6 rounded-lg">
-                                <h3 className="text-xl font-bold mb-2">Dinner</h3>
-                                <p className="text-lg">{menu.dinner}</p>
-                            </div>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <div className="bg-white bg-opacity-20 p-6 rounded-lg">
+                            <h3 className="text-xl font-bold mb-2">Breakfast</h3>
+                            <p className="text-lg">{menu?.breakfast || 'Poha, Tea, Banana'}</p>
                         </div>
-                    ) : (
-                        <p className="text-xl">Menu not available</p>
-                    )}
+                        <div className="bg-white bg-opacity-20 p-6 rounded-lg">
+                            <h3 className="text-xl font-bold mb-2">Lunch</h3>
+                            <p className="text-lg">{menu?.lunch || 'Rice, Dal, Chicken Curry, Salad'}</p>
+                        </div>
+                        <div className="bg-white bg-opacity-20 p-6 rounded-lg">
+                            <h3 className="text-xl font-bold mb-2">Snacks</h3>
+                            <p className="text-lg">{menu?.snacks || 'Samosa, Coffee'}</p>
+                        </div>
+                        <div className="bg-white bg-opacity-20 p-6 rounded-lg">
+                            <h3 className="text-xl font-bold mb-2">Dinner</h3>
+                            <p className="text-lg">{menu?.dinner || 'Roti, Paneer Masala, Rice'}</p>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Stats Section */}
@@ -272,48 +271,8 @@ const AdminDashboard = () => {
                         </div>
                     </div>
 
-                    {/* Waiting List */}
-                    <div className="bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 p-8 rounded-lg">
-                        <div className="flex items-center justify-between mb-8">
-                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Waiting List</h2>
-                        </div>
-                        <div className="space-y-4">
-                            {waitingList.length > 0 ? (
-                                waitingList.map((student) => (
-                                    <div key={student.id} className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-100 dark:border-gray-800">
-                                        <div className="font-medium text-gray-900 dark:text-white">{student.student_name}</div>
-                                        <div className="text-sm text-gray-500 dark:text-gray-400">{student.branch} - Year {student.year_of_study}</div>
-                                        <div className="text-xs text-gray-400 mt-1">Phone: {student.phone}</div>
-                                        <div className="text-xs text-gray-400 mt-1">Join Date: {new Date(student.join_date).toLocaleDateString()}</div>
-                                        <div className="mt-2 flex items-center">
-                                            <input
-                                                type="text"
-                                                placeholder="Room No"
-                                                className="px-2 py-1 border rounded text-sm mr-2 w-24 dark:bg-gray-700 dark:text-white"
-                                                id={`room-input-${student.id}`}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter') {
-                                                        handleAssignStudent(student.id, e.target.value);
-                                                    }
-                                                }}
-                                            />
-                                            <button
-                                                onClick={() => {
-                                                    const val = document.getElementById(`room-input-${student.id}`).value;
-                                                    handleAssignStudent(student.id, val);
-                                                }}
-                                                className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
-                                            >
-                                                Assign
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))
-                            ) : (
-                                <p className="text-gray-700 dark:text-gray-300 text-center py-8 text-xl">No waiting students</p>
-                            )}
-                        </div>
-                    </div>
+                    {/* Empty column to maintain grid structure */}
+                    <div></div>
 
                     {/* Room Details Viewer */}
                     <div className="bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 p-8 rounded-lg">
@@ -325,7 +284,12 @@ const AdminDashboard = () => {
                                     placeholder="Enter room number"
                                     value={selectedRoom}
                                     onChange={(e) => setSelectedRoom(e.target.value)}
-                                    className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                    className="flex-1 px-4 py-3 text-lg rounded-lg border outline-none focus:ring-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                    onKeyPress={(e) => {
+                                        if (e.key === 'Enter') {
+                                            handleRoomDetailsView();
+                                        }
+                                    }}
                                 />
                                 <button
                                     onClick={handleRoomDetailsView}
@@ -384,8 +348,7 @@ const AdminDashboard = () => {
                                                             <div>
                                                                 <span className="text-sm text-gray-500 dark:text-gray-400">Payment: </span>
                                                                 {student.payment_status ? (
-                                                                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${student.payment_status === 'Paid' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                                                                        }`}>
+                                                                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${student.payment_status === 'Paid' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                                                                         {student.payment_status}
                                                                     </span>
                                                                 ) : (

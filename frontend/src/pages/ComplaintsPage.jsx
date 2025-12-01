@@ -19,7 +19,7 @@ const ComplaintsPage = () => {
         try {
             setLoading(true);
             const response = await fetchComplaints();
-            if (response.data.success) {
+            if (response.data && response.data.success) {
                 setComplaints(response.data.data);
             } else {
                 setError('Failed to load complaints');
@@ -36,15 +36,17 @@ const ComplaintsPage = () => {
         setSubmitting(true);
         try {
             const response = await createComplaint(newComplaint);
-            if (response.data.success) {
+            if (response.data && response.data.success) {
                 setShowModal(false);
                 setNewComplaint({ title: '', description: '' });
                 loadComplaints();
+                alert('Complaint submitted successfully!');
             } else {
-                alert(response.data.message);
+                alert(response.data?.message || 'Failed to submit complaint');
             }
         } catch (err) {
-            alert('Failed to submit complaint');
+            console.error('Error submitting complaint:', err);
+            alert('Failed to submit complaint: ' + (err.response?.data?.message || err.message));
         } finally {
             setSubmitting(false);
         }
@@ -53,20 +55,26 @@ const ComplaintsPage = () => {
     const handleResolve = async (id) => {
         try {
             const response = await resolveComplaint(id);
-            if (response.data.success) {
+            if (response.data && response.data.success) {
                 loadComplaints();
+                alert('Complaint marked as resolved successfully!');
             } else {
-                alert(response.data.message);
+                alert(response.data?.message || 'Failed to resolve complaint');
             }
         } catch (err) {
-            alert('Failed to resolve complaint');
+            console.error('Error resolving complaint:', err);
+            alert('Failed to resolve complaint: ' + (err.response?.data?.message || err.message));
         }
     };
 
     const getStatusColor = (status) => {
-        return status === 'Resolved'
-            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-            : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400';
+        if (status === 'Resolved') {
+            return 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400';
+        } else if (status === 'In Progress') {
+            return 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400';
+        } else {
+            return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400';
+        }
     };
 
     if (loading) {
@@ -100,38 +108,61 @@ const ComplaintsPage = () => {
                 </div>
             )}
 
-            <div className="grid grid-cols-1 gap-6">
-                {complaints.map((complaint) => (
-                    <div key={complaint.complaint_id} className="bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-gray-800 rounded-lg p-6 hover:border-accent/50 transition-colors">
-                        <div className="flex items-start justify-between mb-4">
-                            <div>
-                                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">{complaint.title}</h3>
-                                <div className="flex items-center space-x-3 text-sm text-gray-500 dark:text-gray-400">
-                                    <span>{new Date(complaint.created_at).toLocaleDateString()}</span>
-                                    {user?.type === 'admin' && <span>• {complaint.student_name} (Room {complaint.room_number})</span>}
-                                </div>
-                            </div>
-                            <span className={`px-3 py-1 rounded text-xs font-medium ${getStatusColor(complaint.status)}`}>
-                                {complaint.status}
-                            </span>
-                        </div>
-                        <p className="text-gray-700 dark:text-gray-300 mb-6 leading-relaxed">{complaint.description}</p>
-
-                        {user?.type === 'admin' && complaint.status !== 'Resolved' && (
-                            <div className="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-800">
-                                <button
-                                    onClick={() => handleResolve(complaint.complaint_id)}
-                                    className="text-accent hover:text-accent-hover font-medium text-sm transition-colors"
-                                >
-                                    Mark as Resolved
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                ))}
-
+            <div className="bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Student Name</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Room</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Complaint Title / Problem</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                                {user?.type === 'admin' && (
+                                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                                )}
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
+                            {complaints.map((complaint) => (
+                                <tr key={complaint.complaint_id} className="hover:bg-gray-50 dark:hover:bg-gray-900/50">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                                        {user?.type === 'admin' ? complaint.student_name : 'You'}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                        {complaint.room_number}
+                                    </td>
+                                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                                        <div className="font-medium">{complaint.title}</div>
+                                        <div className="text-gray-500 dark:text-gray-400 mt-1">{complaint.description}</div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                        {new Date(complaint.created_at).toLocaleDateString()}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(complaint.status)}`}>
+                                            {complaint.status}
+                                        </span>
+                                    </td>
+                                    {user?.type === 'admin' && (
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                            {complaint.status !== 'Resolved' && (
+                                                <button
+                                                    onClick={() => handleResolve(complaint.complaint_id)}
+                                                    className="text-accent hover:text-accent-hover transition-colors"
+                                                >
+                                                    Mark as Resolved
+                                                </button>
+                                            )}
+                                        </td>
+                                    )}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
                 {complaints.length === 0 && (
-                    <div className="bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-gray-800 rounded-lg p-12 text-center">
+                    <div className="p-12 text-center">
                         <p className="text-gray-500 dark:text-gray-400">No complaints found</p>
                     </div>
                 )}
@@ -148,7 +179,7 @@ const ComplaintsPage = () => {
                                     type="text"
                                     value={newComplaint.title}
                                     onChange={(e) => setNewComplaint({ ...newComplaint, title: e.target.value })}
-                                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition-all"
+                                    className="w-full px-4 py-3 text-lg rounded-lg border outline-none focus:ring-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
                                     placeholder="Brief title of the issue"
                                     required
                                 />
@@ -158,7 +189,7 @@ const ComplaintsPage = () => {
                                 <textarea
                                     value={newComplaint.description}
                                     onChange={(e) => setNewComplaint({ ...newComplaint, description: e.target.value })}
-                                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition-all h-32 resize-none"
+                                    className="w-full px-4 py-3 text-lg rounded-lg border outline-none focus:ring-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-accent focus:border-transparent transition-all h-32 resize-none"
                                     placeholder="Detailed description..."
                                     required
                                 />

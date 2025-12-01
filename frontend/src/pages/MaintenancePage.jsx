@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { fetchMaintenanceRequests, createMaintenanceRequest } from '../services/api';
+import { fetchMaintenanceRequests, createMaintenanceRequest, resolveMaintenanceRequest } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const MaintenancePage = () => {
@@ -82,7 +82,8 @@ const MaintenancePage = () => {
                 setNewRequest({ room_id: user?.room_id || '', category: 'Electrician', description: '', priority: 'Medium' });
             }
         } catch (err) {
-            alert('Failed to submit request');
+            console.error('Error submitting request:', err);
+            alert('Failed to submit request: ' + (err.response?.data?.message || err.message));
         } finally {
             setSubmitting(false);
         }
@@ -90,14 +91,22 @@ const MaintenancePage = () => {
 
     const handleStatusUpdate = async (requestId, newStatus) => {
         try {
-            setRequests(requests.map(req => 
-                req.id === requestId ? {...req, status: newStatus} : req
-            ));
+            // Call the backend API to update the status
+            const response = await resolveMaintenanceRequest(requestId);
             
-            // Backend endpoint for updating status not available, using local update
-            console.log('Status updated locally - backend endpoint not implemented');
+            if (response.data && response.data.success) {
+                // Update the local state
+                setRequests(requests.map(req => 
+                    req.id === requestId ? {...req, status: newStatus} : req
+                ));
+                
+                alert(`Request status updated to ${newStatus} successfully!`);
+            } else {
+                alert(response.data?.message || 'Failed to update request status');
+            }
         } catch (err) {
-            alert('Failed to update request status');
+            console.error('Error updating request status:', err);
+            alert('Failed to update request status: ' + (err.response?.data?.message || err.message));
         }
     };
 
@@ -187,98 +196,107 @@ const MaintenancePage = () => {
                     </div>
                 )}
 
-                {/* Requests Grid */}
-                <div className="grid gap-6">
-                    {requests.length === 0 ? (
-                        <div className="bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 p-16 text-center rounded-lg">
-                            <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-                                No maintenance requests found
-                            </h3>
-                            <p className="text-xl text-gray-700 dark:text-gray-300">
-                                {user?.role === 'student' ? 'Submit your first maintenance request to get started' : 'No requests to review at the moment'}
-                            </p>
-                        </div>
-                    ) : (
-                        requests.map(request => (
-                            <div key={request.id} className="bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 p-8 rounded-lg">
-                                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 space-y-4 lg:space-y-0">
-                                    <div className="flex items-center space-x-6">
-                                        <div>
-                                            <div className="flex items-center space-x-4 mb-2">
-                                                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                                                    Room {request.room_number}
-                                                </h3>
-                                                <span className={`px-4 py-2 rounded font-bold border-2 ${getPriorityColor(request.priority)}`}>
-                                                    {request.priority} Priority
-                                                </span>
-                                            </div>
-                                            <p className="text-lg text-gray-700 dark:text-gray-300">
-                                                {request.category} • {request.student_name}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <span className={`px-6 py-3 rounded font-bold border-2 ${getStatusColor(request.status)}`}>
-                                            {request.status}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div className="mb-6">
-                                    <p className="text-gray-900 dark:text-gray-200 text-xl leading-relaxed">
-                                        {request.description}
-                                    </p>
-                                </div>
-
-                                <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
-                                    <div className="text-lg text-gray-700 dark:text-gray-300">
-                                        <span>Submitted: {new Date(request.created_at).toLocaleDateString('en-US', { 
-                                            year: 'numeric', 
-                                            month: 'long', 
-                                            day: 'numeric' 
-                                        })}</span>
-                                    </div>
-                                    
-                                    {user?.role === 'admin' && request.status !== 'Completed' && (
-                                        <div className="flex space-x-4">
-                                            {request.status === 'Pending' && (
-                                                <>
-                                                    <button
-                                                        onClick={() => handleStatusUpdate(request.id, 'Approved')}
-                                                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-bold"
-                                                    >
-                                                        Approve
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleStatusUpdate(request.id, 'Rejected')}
-                                                        className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-bold"
-                                                    >
-                                                        Reject
-                                                    </button>
-                                                </>
-                                            )}
-                                            {request.status === 'Approved' && (
-                                                <button
-                                                    onClick={() => handleStatusUpdate(request.id, 'In Progress')}
-                                                    className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-bold"
-                                                >
-                                                    Start Work
-                                                </button>
-                                            )}
-                                            {request.status === 'In Progress' && (
-                                                <button
-                                                    onClick={() => handleStatusUpdate(request.id, 'Completed')}
-                                                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-bold"
-                                                >
-                                                    Mark Complete
-                                                </button>
-                                            )}
-                                        </div>
+                {/* Requests Table */}
+                <div className="bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="border-b border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700">
+                                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Student Name</th>
+                                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Room</th>
+                                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Complaint Title / Problem</th>
+                                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Priority</th>
+                                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
+                                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                                    {user?.role === 'admin' && (
+                                        <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                                     )}
-                                </div>
-                            </div>
-                        ))
-                    )}
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-300 dark:divide-gray-600">
+                                {requests.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={user?.role === 'admin' ? 6 : 5} className="px-6 py-16 text-center text-gray-700 dark:text-gray-300">
+                                            <h3 className="text-xl font-bold mb-2">No maintenance requests found</h3>
+                                            <p>{user?.role === 'student' ? 'Submit your first maintenance request to get started' : 'No requests to review at the moment'}</p>
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    requests.map(request => (
+                                        <tr key={request.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                                                {request.student_name}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                                {request.room_number}
+                                            </td>
+                                            <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                                                <div className="font-medium">{getCategoryIcon(request.category)} {request.category}</div>
+                                                <div className="text-gray-500 dark:text-gray-400 mt-1">{request.description}</div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getPriorityColor(request.priority)}`}>
+                                                    {request.priority}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                                {new Date(request.created_at).toLocaleDateString('en-US', { 
+                                                    year: 'numeric', 
+                                                    month: 'long', 
+                                                    day: 'numeric' 
+                                                })}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(request.status)}`}>
+                                                    {request.status}
+                                                </span>
+                                            </td>
+                                            {user?.role === 'admin' && (
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                    {request.status !== 'Completed' && (
+                                                        <div className="flex flex-col space-y-2">
+                                                            {request.status === 'Pending' && (
+                                                                <>
+                                                                    <button
+                                                                        onClick={() => handleStatusUpdate(request.id, 'Approved')}
+                                                                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm"
+                                                                    >
+                                                                        Approve
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleStatusUpdate(request.id, 'Rejected')}
+                                                                        className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
+                                                                    >
+                                                                        Reject
+                                                                    </button>
+                                                                </>
+                                                            )}
+                                                            {request.status === 'Approved' && (
+                                                                <button
+                                                                    onClick={() => handleStatusUpdate(request.id, 'In Progress')}
+                                                                    className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm"
+                                                                >
+                                                                    Start Work
+                                                                </button>
+                                                            )}
+                                                            {request.status === 'In Progress' && (
+                                                                <button
+                                                                    onClick={() => handleStatusUpdate(request.id, 'Completed')}
+                                                                    className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
+                                                                >
+                                                                    Mark Complete
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </td>
+                                            )}
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
                 {/* New Request Modal */}
@@ -300,7 +318,7 @@ const MaintenancePage = () => {
                                                 required
                                                 value={newRequest.room_id}
                                                 onChange={(e) => setNewRequest({...newRequest, room_id: e.target.value})}
-                                                className="w-full p-4 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-lg dark:bg-gray-700 dark:text-white"
+                                                className="w-full px-4 py-3 text-lg rounded-lg border outline-none focus:ring-2 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                                 placeholder="Enter your room number"
                                             />
                                         </div>
@@ -312,7 +330,7 @@ const MaintenancePage = () => {
                                                 required
                                                 value={newRequest.category}
                                                 onChange={(e) => setNewRequest({...newRequest, category: e.target.value})}
-                                                className="w-full p-4 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-lg dark:bg-gray-700 dark:text-white"
+                                                className="w-full px-4 py-3 text-lg rounded-lg border outline-none focus:ring-2 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                             >
                                                 <option value="Electrician">Electrician</option>
                                                 <option value="Plumber">Plumber</option>
@@ -329,7 +347,7 @@ const MaintenancePage = () => {
                                                 required
                                                 value={newRequest.priority}
                                                 onChange={(e) => setNewRequest({...newRequest, priority: e.target.value})}
-                                                className="w-full p-4 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-lg dark:bg-gray-700 dark:text-white"
+                                                className="w-full px-4 py-3 text-lg rounded-lg border outline-none focus:ring-2 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                             >
                                                 <option value="Low">Low Priority</option>
                                                 <option value="Medium">Medium Priority</option>
@@ -345,7 +363,7 @@ const MaintenancePage = () => {
                                                 rows="5"
                                                 value={newRequest.description}
                                                 onChange={(e) => setNewRequest({...newRequest, description: e.target.value})}
-                                                className="w-full p-4 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-lg dark:bg-gray-700 dark:text-white resize-none"
+                                                className="w-full px-4 py-3 text-lg rounded-lg border outline-none focus:ring-2 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white resize-none"
                                                 placeholder="Describe the maintenance issue in detail..."
                                             />
                                         </div>

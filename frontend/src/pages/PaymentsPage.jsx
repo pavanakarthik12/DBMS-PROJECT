@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { fetchPayments } from '../services/api';
-import { useAuth } from '../context/AuthContext';
 
 const PaymentsPage = () => {
     // const { user } = useAuth(); // Unused
@@ -17,7 +16,7 @@ const PaymentsPage = () => {
         try {
             setLoading(true);
             const response = await fetchPayments();
-            if (response.data.success) {
+            if (response.data && response.data.success) {
                 setPayments(response.data.data);
             } else {
                 setError('Failed to load payments');

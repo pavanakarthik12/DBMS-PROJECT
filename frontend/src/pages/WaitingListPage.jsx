@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { fetchWaitingList } from '../services/api';
+import { fetchWaitingList, fetchAvailableRooms, assignWaitingStudent } from '../services/api';
 
 const WaitingListPage = () => {
     const [waitingList, setWaitingList] = useState([]);
+    const [availableRooms, setAvailableRooms] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -14,9 +15,7 @@ const WaitingListPage = () => {
         notes: ''
     });
 
-    useEffect(() => {
-        loadWaitingList();
-    }, []);
+
 
     const sampleWaitingList = [
         { id: 1, name: 'Alex Johnson', email: 'alex.johnson@college.edu', phone: '9876543210', position: 1, applied_date: '2024-11-20' },
@@ -32,7 +31,7 @@ const WaitingListPage = () => {
             setWaitingList(sampleWaitingList);
 
             const response = await fetchWaitingList();
-            if (response.data.success && response.data.data.length > 0) {
+            if (response.data && response.data.success && response.data.data.length > 0) {
                 setWaitingList(response.data.data);
             }
         } catch (err) {
@@ -41,6 +40,22 @@ const WaitingListPage = () => {
             setLoading(false);
         }
     };
+
+    const loadAvailableRooms = async () => {
+        try {
+            const response = await fetchAvailableRooms();
+            if (response.data && response.data.success && response.data.data.length > 0) {
+                setAvailableRooms(response.data.data);
+            }
+        } catch (err) {
+            console.log('Failed to load available rooms');
+        }
+    };
+
+    useEffect(() => {
+        loadWaitingList();
+        loadAvailableRooms();
+    }, []);
 
     if (loading) {
         return (
@@ -81,16 +96,41 @@ const WaitingListPage = () => {
                 }),
             });
             const data = await response.json();
-            if (data.success) {
+            if (data && data.success) {
                 alert('Added to waiting list successfully');
                 setNewStudent({ student_name: '', phone: '', branch: '', year_of_study: '', notes: '' });
                 loadWaitingList();
             } else {
-                alert('Failed to add: ' + data.message);
+                alert('Failed to add: ' + (data?.message || 'Unknown error'));
             }
         } catch (error) {
             console.error('Error adding to waiting list:', error);
-            alert('Error adding to waiting list');
+            alert('Error adding to waiting list: ' + (error.response?.data?.message || error.message));
+        }
+    };
+
+    const handleAssignRoom = async (waitingId, roomId) => {
+        if (!roomId) {
+            alert('Please select a room');
+            return;
+        }
+
+        try {
+            const response = await assignWaitingStudent(waitingId, roomId);
+            if (response.data && response.data.success) {
+                alert('Room assigned successfully!');
+                // Remove the student from the waiting list
+                setWaitingList(prevList => prevList.filter(student => student.id !== waitingId));
+                // Reload available rooms
+                loadAvailableRooms();
+                // Reload waiting list to reflect changes
+                loadWaitingList();
+            } else {
+                alert(response.data?.message || 'Failed to assign room');
+            }
+        } catch (error) {
+            console.error('Error assigning room:', error);
+            alert('Failed to assign room: ' + (error.response?.data?.message || error.message));
         }
     };
 
@@ -114,7 +154,7 @@ const WaitingListPage = () => {
                             name="student_name"
                             value={newStudent.student_name}
                             onChange={handleInputChange}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            className="w-full px-4 py-3 text-lg rounded-lg border outline-none focus:ring-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                             required
                         />
                     </div>
@@ -125,7 +165,7 @@ const WaitingListPage = () => {
                             name="phone"
                             value={newStudent.phone}
                             onChange={handleInputChange}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            className="w-full px-4 py-3 text-lg rounded-lg border outline-none focus:ring-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                             required
                         />
                     </div>
@@ -135,7 +175,7 @@ const WaitingListPage = () => {
                             name="branch"
                             value={newStudent.branch}
                             onChange={handleInputChange}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            className="w-full px-4 py-3 text-lg rounded-lg border outline-none focus:ring-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                             required
                         >
                             <option value="">Select Branch</option>
@@ -152,7 +192,7 @@ const WaitingListPage = () => {
                             name="year_of_study"
                             value={newStudent.year_of_study}
                             onChange={handleInputChange}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            className="w-full px-4 py-3 text-lg rounded-lg border outline-none focus:ring-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                             required
                         >
                             <option value="">Select Year</option>
@@ -170,7 +210,7 @@ const WaitingListPage = () => {
                             value={newStudent.notes || ''}
                             onChange={handleInputChange}
                             placeholder="Optional"
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            className="w-full px-4 py-3 text-lg rounded-lg border outline-none focus:ring-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                         />
                     </div>
                     <button
@@ -193,6 +233,7 @@ const WaitingListPage = () => {
                                 <th className="px-8 py-6 font-bold text-gray-900 dark:text-white uppercase tracking-wider">Notes</th>
                                 <th className="px-8 py-6 font-bold text-gray-900 dark:text-white uppercase tracking-wider">Date Added</th>
                                 <th className="px-8 py-6 font-bold text-gray-900 dark:text-white uppercase tracking-wider">Status</th>
+                                <th className="px-8 py-6 font-bold text-gray-900 dark:text-white uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-300 dark:divide-gray-700">
@@ -224,6 +265,31 @@ const WaitingListPage = () => {
                                         <span className="px-4 py-2 font-bold rounded bg-orange-600 text-white">
                                             Waiting
                                         </span>
+                                    </td>
+                                    <td className="px-8 py-6">
+                                        <div className="flex flex-col space-y-2">
+                                            <select
+                                                id={`room-select-${item.id}`}
+                                                className="w-full px-4 py-3 text-lg rounded-lg border outline-none focus:ring-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                            >
+                                                <option value="">Select Room</option>
+                                                {availableRooms.map(room => (
+                                                    <option key={room.room_id} value={room.room_id}>
+                                                        Room {room.room_id} ({room.capacity - room.current_occupancy} beds available)
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <button
+                                                onClick={() => {
+                                                    const selectElement = document.getElementById(`room-select-${item.id}`);
+                                                    const selectedRoomId = selectElement.value;
+                                                    handleAssignRoom(item.id, selectedRoomId);
+                                                }}
+                                                className="px-4 py-2 bg-green-600 text-white font-medium rounded-md hover:bg-green-700 transition-colors"
+                                            >
+                                                Allot Room
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
